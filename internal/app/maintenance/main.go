@@ -53,10 +53,18 @@ func Run(ctx context.Context, logger *log.Logger) ([]byte, error) {
 		return nil, fmt.Errorf("error waiting for the network to be ready: %w", err)
 	}
 
+	logger.Println("loading current addresses")
+
 	var sideroLinkAddress netip.Addr
 
-	currentAddresses, err := ctrl.Runtime().State().V1Alpha2().Resources().WatchFor(ctx,
-		resource.NewMetadata(network.NamespaceName, network.NodeAddressType, network.NodeAddressCurrentID, resource.VersionUndefined),
+	currentAddresses, err := ctrl.Runtime().State().V1Alpha2().Resources().WatchFor(
+		ctx,
+		resource.NewMetadata(
+			network.NamespaceName,
+			network.NodeAddressType,
+			network.NodeAddressCurrentID,
+			resource.VersionUndefined,
+		),
 		sideroLinkAddressFinder(&sideroLinkAddress, logger),
 	)
 	if err != nil {
@@ -77,6 +85,8 @@ func Run(ctx context.Context, logger *log.Logger) ([]byte, error) {
 		dnsNames = hostnameStatus.(*network.HostnameStatus).TypedSpec().DNSNames()
 	}
 
+	logger.Println("generating TLS config")
+
 	tlsConfig, provider, err := genTLSConfig(ips, dnsNames)
 	if err != nil {
 		return nil, err
@@ -87,12 +97,16 @@ func Run(ctx context.Context, logger *log.Logger) ([]byte, error) {
 		return nil, err
 	}
 
+	logger.Println("fingerprinting cert")
+
 	certFingerprint, err := x509.SPKIFingerprintFromDER(cert.Certificate[0])
 	if err != nil {
 		return nil, err
 	}
 
 	cfgCh := make(chan []byte)
+
+	logger.Println("* creating server")
 
 	s := server.New(ctrl, logger, cfgCh)
 
@@ -114,6 +128,8 @@ func Run(ctx context.Context, logger *log.Logger) ([]byte, error) {
 		factory.WithUnaryInterceptor(injector.UnaryInterceptor()),
 		factory.WithStreamInterceptor(injector.StreamInterceptor()),
 	)
+
+	logger.Println("creating listener")
 
 	listener, err := factory.NewListener(factory.Address(formatIP(sideroLinkAddress)), factory.Port(constants.ApidPort))
 	if err != nil {
@@ -157,7 +173,11 @@ func Run(ctx context.Context, logger *log.Logger) ([]byte, error) {
 	logger.Println("or apply configuration using talosctl interactive installer:")
 	logger.Printf("\ttalosctl apply-config --insecure --nodes %s --mode=interactive", firstIP)
 	logger.Println("optionally with node fingerprint check:")
-	logger.Printf("\ttalosctl apply-config --insecure --nodes %s --cert-fingerprint '%s' --file <config.yaml>", firstIP, certFingerprint)
+	logger.Printf(
+		"\ttalosctl apply-config --insecure --nodes %s --cert-fingerprint '%s' --file <config.yaml>",
+		firstIP,
+		certFingerprint,
+	)
 
 	select {
 	case cfg := <-cfgCh:
@@ -175,7 +195,10 @@ func formatIP(addr netip.Addr) string {
 	return addr.String()
 }
 
-func genTLSConfig(ips []netip.Addr, dnsNames []string) (tlsConfig *tls.Config, provider ttls.CertificateProvider, err error) {
+func genTLSConfig(
+	ips []netip.Addr,
+	dnsNames []string,
+) (tlsConfig *tls.Config, provider ttls.CertificateProvider, err error) {
 	ca, err := x509.NewSelfSignedCertificateAuthority()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate self-signed CA: %w", err)
@@ -222,24 +245,26 @@ func sideroLinkAddressFinder(address *netip.Addr, logger *log.Logger) state.Watc
 		logger.Println(constants.KernelParamSideroLink + " is enabled, waiting for address")
 	}
 
-	return state.WithCondition(func(r resource.Resource) (bool, error) {
-		if resource.IsTombstone(r) {
-			return false, nil
-		}
+	return state.WithCondition(
+		func(r resource.Resource) (bool, error) {
+			if resource.IsTombstone(r) {
+				return false, nil
+			}
 
-		if !sideroLinkEnabled {
-			return true, nil
-		}
-
-		ips := r.(*network.NodeAddress).TypedSpec().IPs()
-		for _, ip := range ips {
-			if network.IsULA(ip, network.ULASideroLink) {
-				*address = ip
-
+			if !sideroLinkEnabled {
 				return true, nil
 			}
-		}
 
-		return false, nil
-	})
+			ips := r.(*network.NodeAddress).TypedSpec().IPs()
+			for _, ip := range ips {
+				if network.IsULA(ip, network.ULASideroLink) {
+					*address = ip
+
+					return true, nil
+				}
+			}
+
+			return false, nil
+		},
+	)
 }
