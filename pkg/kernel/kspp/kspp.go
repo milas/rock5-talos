@@ -63,10 +63,6 @@ func GetKernelParams() []*kernel.Param {
 			Value: "3",
 		},
 		{
-			Key:   "proc.sys.kernel.yama.ptrace_scope",
-			Value: "1",
-		},
-		{
 			Key:   "proc.sys.user.max_user_namespaces",
 			Value: "0",
 		},

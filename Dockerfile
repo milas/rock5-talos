@@ -772,6 +772,8 @@ RUN apk add --no-cache --update --no-scripts \
     binutils-x86_64 \
     cpio \
     dosfstools \
+    cpio \
+    e2fsprogs \
     efibootmgr \
     kmod \
     mtools \

@@ -196,13 +196,7 @@ func (i *Installer) Install(ctx context.Context, mode Mode) (err error) {
 	// Mount the partitions.
 	mountpoints := mount.NewMountPoints()
 
-	var bootLabels []string
-
-	if i.bootloader.UEFIBoot() {
-		bootLabels = []string{constants.EFIPartitionLabel}
-	} else {
-		bootLabels = []string{constants.BootPartitionLabel, constants.EFIPartitionLabel}
-	}
+	for _, label := range []string{constants.BootPartitionLabel} {
 
 	for _, label := range bootLabels {
 		err = func() error {
@@ -264,15 +258,6 @@ func (i *Installer) Install(ctx context.Context, mode Mode) (err error) {
 	if err = i.bootloader.Install(bootloaderoptions.InstallOptions{
 		BootDisk:   i.options.Disk,
 		Arch:       i.options.Arch,
-		Cmdline:    i.cmdline.String(),
-		Version:    i.options.Version,
-		ImageMode:  mode.IsImage(),
-		BootAssets: i.options.BootAssets,
-		Printf:     i.options.Printf,
-	}); err != nil {
-		return err
-	}
-
 	if i.options.Board != constants.BoardNone {
 		var b runtime.Board
 

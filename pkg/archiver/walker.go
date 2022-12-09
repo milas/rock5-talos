@@ -31,10 +31,11 @@ const (
 )
 
 type walkerOptions struct {
-	skipRoot        bool
-	maxRecurseDepth int
-	fnmatchPatterns []string
-	types           map[FileType]struct{}
+	skipRoot         bool
+	maxRecurseDepth  int
+	fnmatchPatterns  []string
+	fnignorePatterns []string
+	types            map[FileType]struct{}
 }
 
 // WalkerOption configures Walker.
@@ -62,6 +63,15 @@ func WithMaxRecurseDepth(maxDepth int) WalkerOption {
 func WithFnmatchPatterns(patterns ...string) WalkerOption {
 	return func(o *walkerOptions) {
 		o.fnmatchPatterns = append(o.fnmatchPatterns, patterns...)
+	}
+}
+
+// WithFnignorePatterns ignores results matching any of the patterns.
+//
+// Default is not to do any ignoring.
+func WithFnignorePatterns(patterns ...string) WalkerOption {
+	return func(o *walkerOptions) {
+		o.fnignorePatterns = append(o.fnignorePatterns, patterns...)
 	}
 }
 
@@ -163,6 +173,14 @@ func Walker(ctx context.Context, rootPath string, options ...WalkerOption) (<-ch
 
 				if !matches {
 					return nil
+				}
+			}
+
+			if item.Error == nil && len(opts.fnignorePatterns) > 0 {
+				for _, pattern := range opts.fnignorePatterns {
+					if matches, _ := filepath.Match(pattern, item.RelPath); matches { //nolint:errcheck
+						return nil
+					}
 				}
 			}
 

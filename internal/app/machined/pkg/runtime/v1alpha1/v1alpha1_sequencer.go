@@ -100,9 +100,6 @@ func (*Sequencer) Initialize(r runtime.Runtime) []runtime.Phase {
 			MountPseudoFilesystems,
 			SetRLimit,
 		).Append(
-			"integrity",
-			WriteIMAPolicy,
-		).Append(
 			"etc",
 			CreateSystemCgroups,
 			CreateOSReleaseFile,

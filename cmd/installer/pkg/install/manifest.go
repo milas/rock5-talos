@@ -115,23 +115,57 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 		manifest.Targets[opts.Disk] = []*Target{}
 	}
 
-	targets := []*Target{}
+	var targets []*Target
+	var bootTarget *Target
 
-	// create GRUB BIOS+UEFI partitions, or only one big EFI partition if not using GRUB
-	if !uefiOnlyBoot {
-		targets = append(targets,
-			EFITarget(opts.Disk, nil),
-			BIOSTarget(opts.Disk, nil),
-			BootTarget(opts.Disk, &Target{
-				PreserveContents: bootLoaderPresent,
-			}),
-		)
-	} else {
-		targets = append(targets,
-			EFITargetUKI(opts.Disk, &Target{
-				PreserveContents: bootLoaderPresent,
-			}),
-		)
+	if opts.Bootloader {
+		bootTarget = BootTarget(opts.Disk, &Target{
+			PreserveContents: bootPartitionFound,
+			Assets: []*Asset{
+				{
+					Source:      fmt.Sprintf(constants.KernelAssetPath, opts.Arch),
+					Destination: filepath.Join(constants.BootMountPoint, label, constants.KernelAsset),
+				},
+				{
+					Source:      fmt.Sprintf(constants.InitramfsAssetPath, opts.Arch),
+					Destination: filepath.Join(constants.BootMountPoint, label, constants.InitramfsAsset),
+				},
+				{
+					Source:      fmt.Sprintf(constants.ExtlinuxAssetPath, opts.Arch),
+					Destination: filepath.Join(constants.BootMountPoint, constants.ExtlinuxAsset),
+				},
+				{
+					Source: filepath.Join(
+						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+						"rockchip",
+						"rk3588-rock-5b.dtb",
+					),
+					Destination: filepath.Join(
+						constants.BootMountPoint,
+						label,
+						"dtbs",
+						"rockchip",
+						"rk3588-rock-5b.dtb",
+					),
+				},
+				{
+					Source: filepath.Join(
+						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+						"rockchip",
+						"overlay",
+						"rk3588-uart7-m2.dtbo",
+					),
+					Destination: filepath.Join(
+						constants.BootMountPoint,
+						label,
+						"dtbs",
+						"rockchip",
+						"overlay",
+						"rk3588-uart7-m2.dtbo",
+					),
+				},
+			},
+		})
 	}
 
 	targets = append(targets,
@@ -450,9 +484,10 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 		}
 
 		var (
-			sourcePart     *gpt.Partition
-			fileSystemType partition.FileSystemType
-			fnmatchFilters []string
+			sourcePart      *gpt.Partition
+			fileSystemType  partition.FileSystemType
+			fnmatchFilters  []string
+			fnignoreFilters []string
 		)
 
 		sources := append([]PreserveSource{
@@ -470,6 +505,17 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 					fileSystemType = source.FileSystemType
 					fnmatchFilters = source.FnmatchFilters
 
+					// HACK: for ext filesystems, the lost+found directory will
+					// already exist. we'll go ahead and ignore it AND its
+					// contents if it has any (/boot isn't r-w, so there isn't
+					// anything we'd ever need to recover from it)
+					if source.FileSystemType == partition.FilesystemTypeExt4 {
+						fnignoreFilters = []string{
+							"lost+found",
+							"lost+found/*",
+						}
+					}
+
 					break
 				}
 			}
@@ -481,7 +527,7 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 			continue
 		}
 
-		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters); err != nil {
+		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters, fnignoreFilters); err != nil {
 			m.Printf("warning: failed to preserve contents of %q on %q: %s", target.Label, device.Device, err)
 		}
 	}
