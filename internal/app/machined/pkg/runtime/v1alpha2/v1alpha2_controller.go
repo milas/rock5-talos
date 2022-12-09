@@ -64,6 +64,8 @@ func NewController(v1alpha1Runtime runtime.Runtime) (*Controller, error) {
 		v1alpha1Runtime: v1alpha1Runtime,
 	}
 
+	ctrl.consoleLogLevel.SetLevel(zapcore.DebugLevel)
+
 	logWriter, err := ctrl.loggingManager.ServiceLog("controller-runtime").Writer()
 	if err != nil {
 		return nil, err
@@ -71,7 +73,12 @@ func NewController(v1alpha1Runtime runtime.Runtime) (*Controller, error) {
 
 	ctrl.logger = logging.ZapLogger(
 		logging.NewLogDestination(logWriter, zapcore.DebugLevel, logging.WithColoredLevels()),
-		logging.NewLogDestination(logging.StdWriter, ctrl.consoleLogLevel, logging.WithoutTimestamp(), logging.WithoutLogLevels()),
+		logging.NewLogDestination(
+			logging.StdWriter,
+			ctrl.consoleLogLevel,
+			logging.WithoutTimestamp(),
+			logging.WithoutLogLevels(),
+		),
 	).With(logging.Component("controller-runtime"))
 
 	ctrl.controllerRuntime, err = osruntime.NewRuntime(v1alpha1Runtime.State().V1Alpha2().Resources(), ctrl.logger)
@@ -274,7 +281,12 @@ func (ctrl *Controller) watchMachineConfig(ctx context.Context) {
 
 	if err := ctrl.v1alpha1Runtime.State().V1Alpha2().Resources().Watch(
 		ctx,
-		resource.NewMetadata(configresource.NamespaceName, configresource.MachineConfigType, configresource.V1Alpha1ID, resource.VersionUndefined),
+		resource.NewMetadata(
+			configresource.NamespaceName,
+			configresource.MachineConfigType,
+			configresource.V1Alpha1ID,
+			resource.VersionUndefined,
+		),
 		watchCh,
 	); err != nil {
 		ctrl.logger.Warn("error watching machine configuration", zap.Error(err))
@@ -315,7 +327,11 @@ func (ctrl *Controller) updateConsoleLoggingConfig(cfg talosconfig.Provider) {
 	}
 }
 
-func (ctrl *Controller) updateLoggingConfig(ctx context.Context, cfg talosconfig.Provider, prevLoggingEndpoints *[]*url.URL) {
+func (ctrl *Controller) updateLoggingConfig(
+	ctx context.Context,
+	cfg talosconfig.Provider,
+	prevLoggingEndpoints *[]*url.URL,
+) {
 	dests := cfg.Machine().Logging().Destinations()
 	loggingEndpoints := make([]*url.URL, len(dests))
 

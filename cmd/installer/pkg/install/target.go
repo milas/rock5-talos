@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 
 	"github.com/dustin/go-humanize"
-	"github.com/siderolabs/go-blockdevice/blockdevice"
 	"github.com/siderolabs/go-blockdevice/blockdevice/partition/gpt"
 	"github.com/siderolabs/go-blockdevice/blockdevice/util"
 	"golang.org/x/sys/unix"
@@ -78,6 +77,7 @@ var NoFilesystem = &Target{
 // EFITarget builds the default EFI target.
 func EFITarget(device string, extra *Target) *Target {
 	target := &Target{
+		// FormatOptions: partition.NewFormatOptionsWithOffset(constants.EFIPartitionLabel, 0x8000),
 		FormatOptions: partition.NewFormatOptions(constants.EFIPartitionLabel),
 		Device:        device,
 	}
@@ -176,7 +176,7 @@ func (t *Target) Locate(pt *gpt.GPT) (*gpt.Partition, error) {
 }
 
 // Partition creates a new partition on the specified device.
-func (t *Target) Partition(pt *gpt.GPT, pos int, bd *blockdevice.BlockDevice) (err error) {
+func (t *Target) Partition(pt *gpt.GPT) (err error) {
 	if t.Skip {
 		part := pt.Partitions().FindByName(t.Label)
 		if part != nil {
@@ -202,11 +202,16 @@ func (t *Target) Partition(pt *gpt.GPT, pos int, bd *blockdevice.BlockDevice) (e
 		opts = append(opts, gpt.WithMaximumSize(true))
 	}
 
+	if t.Offset != 0 {
+		log.Printf("  using offset %d sectors (%d bytes)", t.Offset/uint64(pt.Header().LBA.LogicalBlockSize), t.Offset)
+		opts = append(opts, gpt.WithOffset(t.Offset))
+	}
+
 	if t.LegacyBIOSBootable {
 		opts = append(opts, gpt.WithLegacyBIOSBootableAttribute(true))
 	}
 
-	part, err := pt.InsertAt(pos, t.Size, opts...)
+	part, err := pt.Add(t.Size, opts...)
 	if err != nil {
 		return err
 	}
@@ -216,7 +221,7 @@ func (t *Target) Partition(pt *gpt.GPT, pos int, bd *blockdevice.BlockDevice) (e
 		return err
 	}
 
-	log.Printf("created %s (%s) size %d blocks", t.PartitionName, t.Label, part.Length())
+	log.Printf("created %s (%s) start %d size %d blocks", t.PartitionName, t.Label, part.FirstLBA, part.Length())
 
 	return nil
 }
@@ -294,7 +299,13 @@ func (t *Target) GetLabel() string {
 	return t.Label
 }
 
-func withTemporaryMounted(partPath string, flags uintptr, fileSystemType partition.FileSystemType, label string, f func(mountPath string) error) error {
+func withTemporaryMounted(
+	partPath string,
+	flags uintptr,
+	fileSystemType partition.FileSystemType,
+	label string,
+	f func(mountPath string) error,
+) error {
 	mountPath := filepath.Join(constants.SystemPath, "mnt")
 
 	mountpoints := mount.NewMountPoints()
@@ -316,7 +327,12 @@ func withTemporaryMounted(partPath string, flags uintptr, fileSystemType partiti
 }
 
 // SaveContents saves contents of partition to the target (in-memory).
-func (t *Target) SaveContents(device Device, source *gpt.Partition, fileSystemType partition.FileSystemType, fnmatchFilters []string) error {
+func (t *Target) SaveContents(
+	device Device,
+	source *gpt.Partition,
+	fileSystemType partition.FileSystemType,
+	fnmatchFilters []string,
+) error {
 	partPath, err := util.PartPath(device.Device, int(source.Number))
 	if err != nil {
 		return err
@@ -360,12 +376,23 @@ func (t *Target) saveRawContents(partPath string) error {
 	return src.Close()
 }
 
-func (t *Target) saveFilesystemContents(partPath string, fileSystemType partition.FileSystemType, fnmatchFilters []string) error {
+func (t *Target) saveFilesystemContents(
+	partPath string,
+	fileSystemType partition.FileSystemType,
+	fnmatchFilters []string,
+) error {
 	t.Contents = bytes.NewBuffer(nil)
 
-	return withTemporaryMounted(partPath, unix.MS_RDONLY, fileSystemType, t.Label, func(mountPath string) error {
-		return archiver.TarGz(context.TODO(), mountPath, t.Contents, archiver.WithFnmatchPatterns(fnmatchFilters...))
-	})
+	return withTemporaryMounted(
+		partPath, unix.MS_RDONLY, fileSystemType, t.Label, func(mountPath string) error {
+			return archiver.TarGz(
+				context.TODO(),
+				mountPath,
+				t.Contents,
+				archiver.WithFnmatchPatterns(fnmatchFilters...),
+			)
+		},
+	)
 }
 
 // RestoreContents restores previously saved contents to the disk.
@@ -415,7 +442,9 @@ func (t *Target) restoreRawContents() error {
 }
 
 func (t *Target) restoreFilesystemContents() error {
-	return withTemporaryMounted(t.PartitionName, 0, t.FileSystemType, t.Label, func(mountPath string) error {
-		return archiver.UntarGz(context.TODO(), t.Contents, mountPath)
-	})
+	return withTemporaryMounted(
+		t.PartitionName, 0, t.FileSystemType, t.Label, func(mountPath string) error {
+			return archiver.UntarGz(context.TODO(), t.Contents, mountPath)
+		},
+	)
 }

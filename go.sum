@@ -1455,6 +1455,7 @@ golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201202213521-69691e467435/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210112080510-489259a85091/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210309074719-68d13333faf2/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210324051608-47abb6519492/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210330210617-4fbd30eecc44/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
@@ -1800,6 +1801,10 @@ kernel.org/pub/linux/libs/security/libcap/cap v1.2.66 h1:3P0DgIuplTGQ4dQdbBSVN0b
 kernel.org/pub/linux/libs/security/libcap/cap v1.2.66/go.mod h1:uBDKZw0kXu6ULhetpF19Z7izd74o3u0nO2dXIPQGmb0=
 kernel.org/pub/linux/libs/security/libcap/psx v1.2.66 h1:ikIhPzfkSSAEwBOU+2DWhoF+xnGUhvlMTfQjBVhvzQY=
 kernel.org/pub/linux/libs/security/libcap/psx v1.2.66/go.mod h1:+l6Ee2F59XiJ2I6WR5ObpC1utCQJZ/VLsEbQCD8RG24=
+pault.ag/go/modprobe v0.1.2 h1:bblunaPhqpTxGDJ5TVFW/4gheohBPleF2dIV6j6sWkI=
+pault.ag/go/modprobe v0.1.2/go.mod h1:afr2STC/2Maz/qi4+Bma1s0dszZgO/PcM8AKar9DWhM=
+pault.ag/go/topsort v0.0.0-20160530003732-f98d2ad46e1a h1:WwS7vlB5H2AtwKj1jsGwp2ZLud1x6WXRXh2fXsRqrcA=
+pault.ag/go/topsort v0.0.0-20160530003732-f98d2ad46e1a/go.mod h1:INqx0ClF7kmPAMk2zVTX8DRnhZ/yaA/Mg52g8KFKE7k=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
