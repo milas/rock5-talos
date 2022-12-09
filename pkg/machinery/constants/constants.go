@@ -7,7 +7,7 @@ package constants
 import (
 	"time"
 
-	cni "github.com/containerd/go-cni"
+	"github.com/containerd/go-cni"
 	"github.com/siderolabs/crypto/x509"
 )
 
@@ -78,6 +78,9 @@ const (
 
 	// BoardNanoPiR4S is the name of the Friendlyelec Nano Pi R4S.
 	BoardNanoPiR4S = "nanopi_r4s"
+
+	// BoardRockpi5 is the name of the Radxa Rock pi 4 revisions A and B.
+	BoardRock5b = "rock_5b"
 
 	// KernelParamHostname is the kernel parameter name for specifying the
 	// hostname.
@@ -487,6 +490,12 @@ const (
 
 	// InitramfsAssetPath is the path to the initramfs on disk.
 	InitramfsAssetPath = "/usr/install/%s/" + InitramfsAsset
+
+	ExtlinuxAsset = "extlinux/extlinux.conf"
+
+	ExtlinuxAssetPath = "/usr/install/%s/" + ExtlinuxAsset
+
+	DtbsAssetPath = "/usr/install/%s/dtb/"
 
 	// RootfsAsset defines a well known name for our rootfs filename.
 	RootfsAsset = "rootfs.sqsh"
