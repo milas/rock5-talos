@@ -115,9 +115,7 @@ func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound boo
 		manifest.Targets[opts.Disk] = []*Target{}
 	}
 
-	efiTarget := EFITarget(opts.Disk, nil)
-	biosTarget := BIOSTarget(opts.Disk, nil)
-
+	var targets []*Target
 	var bootTarget *Target
 
 	if opts.Bootloader {
@@ -131,6 +129,40 @@ func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound boo
 				{
 					Source:      fmt.Sprintf(constants.InitramfsAssetPath, opts.Arch),
 					Destination: filepath.Join(constants.BootMountPoint, label, constants.InitramfsAsset),
+				},
+				{
+					Source:      fmt.Sprintf(constants.ExtlinuxAssetPath, opts.Arch),
+					Destination: filepath.Join(constants.BootMountPoint, constants.ExtlinuxAsset),
+				},
+				{
+					Source: filepath.Join(
+						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+						"rockchip",
+						"rk3588-rock-5b.dtb",
+					),
+					Destination: filepath.Join(
+						constants.BootMountPoint,
+						label,
+						"dtbs",
+						"rockchip",
+						"rk3588-rock-5b.dtb",
+					),
+				},
+				{
+					Source: filepath.Join(
+						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+						"rockchip",
+						"overlay",
+						"rk3588-uart7-m2.dtbo",
+					),
+					Destination: filepath.Join(
+						constants.BootMountPoint,
+						label,
+						"dtbs",
+						"rockchip",
+						"overlay",
+						"rk3588-uart7-m2.dtbo",
+					),
 				},
 			},
 		})
@@ -149,7 +181,7 @@ func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound boo
 
 	ephemeralTarget := EphemeralTarget(opts.Disk, NoFilesystem)
 
-	targets := []*Target{efiTarget, biosTarget, bootTarget, metaTarget, stateTarget, ephemeralTarget}
+	targets = append(targets, bootTarget, metaTarget, stateTarget, ephemeralTarget)
 
 	if !opts.Force {
 		for _, target := range targets {
@@ -452,9 +484,10 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 		}
 
 		var (
-			sourcePart     *gpt.Partition
-			fileSystemType partition.FileSystemType
-			fnmatchFilters []string
+			sourcePart      *gpt.Partition
+			fileSystemType  partition.FileSystemType
+			fnmatchFilters  []string
+			fnignoreFilters []string
 		)
 
 		sources := append([]PreserveSource{
@@ -472,6 +505,17 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 					fileSystemType = source.FileSystemType
 					fnmatchFilters = source.FnmatchFilters
 
+					// HACK: for ext filesystems, the lost+found directory will
+					// already exist. we'll go ahead and ignore it AND its
+					// contents if it has any (/boot isn't r-w, so there isn't
+					// anything we'd ever need to recover from it)
+					if source.FileSystemType == partition.FilesystemTypeExt4 {
+						fnignoreFilters = []string{
+							"lost+found",
+							"lost+found/*",
+						}
+					}
+
 					break
 				}
 			}
@@ -483,7 +527,7 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 			continue
 		}
 
-		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters); err != nil {
+		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters, fnignoreFilters); err != nil {
 			log.Printf("warning: failed to preserve contents of %q on %q: %s", target.Label, device.Device, err)
 		}
 	}

@@ -666,6 +666,7 @@ FROM alpine:3.17.2 AS installer-image
 RUN apk add --no-cache --update --no-scripts \
     bash \
     cpio \
+    e2fsprogs \
     efibootmgr \
     kmod \
     mtools \
