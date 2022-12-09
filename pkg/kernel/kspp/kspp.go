@@ -40,7 +40,15 @@ func EnforceKSPPKernelParameters() error {
 
 		expected := values.First()
 		if *val != *expected {
-			result = multierror.Append(result, fmt.Errorf("KSPP kernel parameter %s was found with value %s, expected %s", values.Key(), *val, *expected))
+			result = multierror.Append(
+				result,
+				fmt.Errorf(
+					"KSPP kernel parameter %s was found with value %s, expected %s",
+					values.Key(),
+					*val,
+					*expected,
+				),
+			)
 		}
 	}
 
@@ -62,10 +70,10 @@ func GetKernelParams() []*kernel.Param {
 			Key:   "proc.sys.kernel.perf_event_paranoid",
 			Value: "3",
 		},
-		{
-			Key:   "proc.sys.kernel.yama.ptrace_scope",
-			Value: "1",
-		},
+		// {
+		// 	Key:   "proc.sys.kernel.yama.ptrace_scope",
+		// 	Value: "1",
+		// },
 		{
 			Key:   "proc.sys.user.max_user_namespaces",
 			Value: "0",
