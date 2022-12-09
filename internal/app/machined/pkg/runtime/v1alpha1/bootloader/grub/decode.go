@@ -37,7 +37,7 @@ func Read(path string) (*Config, error) {
 func Decode(c []byte) (*Config, error) {
 	defaultEntryMatches := defaultEntryRegex.FindAllSubmatch(c, -1)
 	if len(defaultEntryMatches) != 1 {
-		return nil, fmt.Errorf("failed to find default")
+		return nil, fmt.Errorf("failed to find default grub entry")
 	}
 
 	fallbackEntryMatches := fallbackEntryRegex.FindAllSubmatch(c, -1)

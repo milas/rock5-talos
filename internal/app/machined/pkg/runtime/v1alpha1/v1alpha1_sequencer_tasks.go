@@ -43,6 +43,7 @@ import (
 	"golang.org/x/sys/unix"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"kernel.org/pub/linux/libs/security/libcap/cap"
+	"pault.ag/go/modprobe"
 
 	installer "github.com/siderolabs/talos/cmd/installer/pkg/install"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
@@ -97,13 +98,18 @@ func SetupLogger(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionF
 
 		// disable ratelimiting for kmsg, otherwise logs might be not visible.
 		// this should be set via kernel arg, but in case it's not set, try to force it.
-		if err = krnl.WriteParam(&kernel.Param{
-			Key:   "proc.sys.kernel.printk_devkmsg",
-			Value: "on\n",
-		}); err != nil {
+		if err = krnl.WriteParam(
+			&kernel.Param{
+				Key:   "proc.sys.kernel.printk_devkmsg",
+				Value: "on\n",
+			},
+		); err != nil {
 			var serr syscall.Errno
 
-			if !(errors.As(err, &serr) && serr == syscall.EINVAL) { // ignore EINVAL which is returned when kernel arg is set
+			if !(errors.As(
+				err,
+				&serr,
+			) && serr == syscall.EINVAL) { // ignore EINVAL which is returned when kernel arg is set
 				log.Printf("failed setting kernel.printk_devkmsg: %s, error ignored", err)
 			}
 		}
@@ -119,7 +125,10 @@ func SetupLogger(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionF
 // EnforceKSPPRequirements represents the EnforceKSPPRequirements task.
 func EnforceKSPPRequirements(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
 	return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) (err error) {
-		if err = resourceruntime.NewKernelParamsSetCondition(r.State().V1Alpha2().Resources(), kspp.GetKernelParams()...).Wait(ctx); err != nil {
+		if err = resourceruntime.NewKernelParamsSetCondition(
+			r.State().V1Alpha2().Resources(),
+			kspp.GetKernelParams()...,
+		).Wait(ctx); err != nil {
 			return err
 		}
 
@@ -232,9 +241,11 @@ func CreateSystemCgroups(seq runtime.Sequence, data interface{}) (runtime.TaskEx
 				}
 
 				if c.name == constants.CgroupInit {
-					if err := cg.Add(cgroups.Process{
-						Pid: os.Getpid(),
-					}); err != nil {
+					if err := cg.Add(
+						cgroups.Process{
+							Pid: os.Getpid(),
+						},
+					); err != nil {
 						return fmt.Errorf("failed to move init process to cgroup: %w", err)
 					}
 				}
@@ -285,6 +296,15 @@ func MountPseudoFilesystems(seq runtime.Sequence, data interface{}) (runtime.Tas
 
 		return mount.Mount(mountpoints)
 	}, "mountPseudoFilesystems"
+}
+
+func LoadDrivers(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
+	return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) error {
+		if err := modprobe.Load("r8125", ""); err != nil {
+			return fmt.Errorf("r8125 load: %w", err)
+		}
+		return nil
+	}, "loadDrivers"
 }
 
 // SetRLimit represents the SetRLimit task.
@@ -508,9 +528,11 @@ func LoadConfig(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFu
 			}
 
 			if e != nil {
-				r.Events().Publish(ctx, &machineapi.ConfigLoadErrorEvent{
-					Error: e.Error(),
-				})
+				r.Events().Publish(
+					ctx, &machineapi.ConfigLoadErrorEvent{
+						Error: e.Error(),
+					},
+				)
 
 				platform.FireEvent(
 					ctx,
@@ -529,9 +551,11 @@ func LoadConfig(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFu
 
 			cfg, e := r.LoadAndValidateConfig(b)
 			if e != nil {
-				r.Events().Publish(ctx, &machineapi.ConfigLoadErrorEvent{
-					Error: e.Error(),
-				})
+				r.Events().Publish(
+					ctx, &machineapi.ConfigLoadErrorEvent{
+						Error: e.Error(),
+					},
+				)
 
 				platform.FireEvent(
 					ctx,
@@ -635,15 +659,19 @@ func fetchConfig(ctx context.Context, r runtime.Runtime) (out []byte, err error)
 
 func receiveConfigViaMaintenanceService(ctx context.Context, logger *log.Logger, r runtime.Runtime) ([]byte, error) {
 	// add "fake" events to signal when Talos enters and leaves maintenance mode
-	r.Events().Publish(ctx, &machineapi.TaskEvent{
-		Action: machineapi.TaskEvent_START,
-		Task:   "runningMaintenance",
-	})
+	r.Events().Publish(
+		ctx, &machineapi.TaskEvent{
+			Action: machineapi.TaskEvent_START,
+			Task:   "runningMaintenance",
+		},
+	)
 
-	defer r.Events().Publish(ctx, &machineapi.TaskEvent{
-		Action: machineapi.TaskEvent_STOP,
-		Task:   "runningMaintenance",
-	})
+	defer r.Events().Publish(
+		ctx, &machineapi.TaskEvent{
+			Action: machineapi.TaskEvent_STOP,
+			Task:   "runningMaintenance",
+		},
+	)
 
 	cfgBytes, err := maintenance.Run(ctx, logger)
 	if err != nil {
@@ -850,12 +878,14 @@ func StartAllServices(seq runtime.Sequence, data interface{}) (runtime.TaskExecu
 
 		switch t := r.Config().Machine().Type(); t {
 		case machine.TypeInit:
-			serviceList = append(serviceList,
+			serviceList = append(
+				serviceList,
 				&services.Trustd{},
 				&services.Etcd{Bootstrap: true},
 			)
 		case machine.TypeControlPlane:
-			serviceList = append(serviceList,
+			serviceList = append(
+				serviceList,
 				&services.Trustd{},
 				&services.Etcd{},
 			)
@@ -952,7 +982,14 @@ func SetupSharedFilesystems(seq runtime.Sequence, data interface{}) (runtime.Tas
 // SetupVarDirectory represents the SetupVarDirectory task.
 func SetupVarDirectory(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
 	return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) (err error) {
-		for _, p := range []string{"/var/log/audit", "/var/log/containers", "/var/log/pods", "/var/lib/kubelet", "/var/run/lock", constants.SeccompProfilesDirectory} {
+		for _, p := range []string{
+			"/var/log/audit",
+			"/var/log/containers",
+			"/var/log/pods",
+			"/var/lib/kubelet",
+			"/var/run/lock",
+			constants.SeccompProfilesDirectory,
+		} {
 			if err = os.MkdirAll(p, 0o700); err != nil {
 				return err
 			}
@@ -964,7 +1001,11 @@ func SetupVarDirectory(seq runtime.Sequence, data interface{}) (runtime.TaskExec
 				return err
 			}
 
-			if err = os.Chown(p, constants.KubernetesAPIServerRunUser, constants.KubernetesAPIServerRunGroup); err != nil {
+			if err = os.Chown(
+				p,
+				constants.KubernetesAPIServerRunUser,
+				constants.KubernetesAPIServerRunGroup,
+			); err != nil {
 				return fmt.Errorf("failed to chown %s: %w", p, err)
 			}
 		}
@@ -1439,7 +1480,12 @@ func UncordonNode(seq runtime.Sequence, data interface{}) (runtime.TaskExecution
 	return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) (err error) {
 		var kubeHelper *kubernetes.Client
 
-		if err = retry.Constant(5*time.Minute, retry.WithUnits(time.Second), retry.WithErrorLogging(true)).RetryWithContext(ctx,
+		if err = retry.Constant(
+			5*time.Minute,
+			retry.WithUnits(time.Second),
+			retry.WithErrorLogging(true),
+		).RetryWithContext(
+			ctx,
 			func(ctx context.Context) error {
 				if r.Config().Machine().Type().IsControlPlane() {
 					kubeHelper, err = kubernetes.NewTemporaryClientControlPlane(ctx, r.State().V1Alpha2().Resources())
@@ -1448,7 +1494,8 @@ func UncordonNode(seq runtime.Sequence, data interface{}) (runtime.TaskExecution
 				}
 
 				return retry.ExpectedError(err)
-			}); err != nil {
+			},
+		); err != nil {
 			return err
 		}
 
@@ -1544,7 +1591,12 @@ func waitForKubeletLifecycleFinalizers(ctx context.Context, logger *log.Logger, 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	lifecycle := resource.NewMetadata(k8s.NamespaceName, k8s.KubeletLifecycleType, k8s.KubeletLifecycleID, resource.VersionUndefined)
+	lifecycle := resource.NewMetadata(
+		k8s.NamespaceName,
+		k8s.KubeletLifecycleType,
+		k8s.KubeletLifecycleID,
+		resource.VersionUndefined,
+	)
 
 	for {
 		ok, err := r.State().V1Alpha2().Resources().Teardown(ctx, lifecycle)
@@ -1599,7 +1651,12 @@ func stopAndRemoveAllPods(stopAction cri.StopAction) runtime.TaskExecutionFunc {
 		// any cleanup tasks. If we don't do this, we run the risk of killing the
 		// CNI, preventing the CRI from cleaning up the pod's netwokring.
 
-		if err = client.StopAndRemovePodSandboxes(ctx, stopAction, runtimeapi.NamespaceMode_POD, runtimeapi.NamespaceMode_CONTAINER); err != nil {
+		if err = client.StopAndRemovePodSandboxes(
+			ctx,
+			stopAction,
+			runtimeapi.NamespaceMode_POD,
+			runtimeapi.NamespaceMode_CONTAINER,
+		); err != nil {
 			return err
 		}
 
@@ -1671,24 +1728,26 @@ func VerifyDiskAvailability(seq runtime.Sequence, data interface{}) (runtime.Tas
 
 		mountsReported := false
 
-		return retry.Constant(3*time.Minute, retry.WithUnits(500*time.Millisecond)).Retry(func() error {
-			if err = tryLock(partname); err != nil {
-				if err == unix.EBUSY {
-					if !mountsReported {
-						// if disk is busy, report mounts for debugging purposes but just once
-						// otherwise console might be flooded with messages
-						dumpMounts(logger)
-						mountsReported = true
+		return retry.Constant(3*time.Minute, retry.WithUnits(500*time.Millisecond)).Retry(
+			func() error {
+				if err = tryLock(partname); err != nil {
+					if err == unix.EBUSY {
+						if !mountsReported {
+							// if disk is busy, report mounts for debugging purposes but just once
+							// otherwise console might be flooded with messages
+							dumpMounts(logger)
+							mountsReported = true
+						}
+
+						return retry.ExpectedError(fmt.Errorf("ephemeral partition in use: %q", partname))
 					}
 
-					return retry.ExpectedError(fmt.Errorf("ephemeral partition in use: %q", partname))
+					return fmt.Errorf("failed to verify ephemeral partition not in use: %w", err)
 				}
 
-				return fmt.Errorf("failed to verify ephemeral partition not in use: %w", err)
-			}
-
-			return nil
-		})
+				return nil
+			},
+		)
 	}, "verifyDiskAvailability"
 }
 
@@ -1772,7 +1831,8 @@ func LabelNodeAsControlPlane(seq runtime.Sequence, data interface{}) (runtime.Ta
 			}
 
 			return nil
-		})
+		},
+		)
 
 		if err != nil {
 			return fmt.Errorf("failed to label node as control-plane: %w", err)
@@ -1813,9 +1873,11 @@ func Reboot(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, 
 			rebootCmd = unix.LINUX_REBOOT_CMD_KEXEC
 		}
 
-		r.Events().Publish(ctx, &machineapi.RestartEvent{
-			Cmd: int64(rebootCmd),
-		})
+		r.Events().Publish(
+			ctx, &machineapi.RestartEvent{
+				Cmd: int64(rebootCmd),
+			},
+		)
 
 		platform.FireEvent(
 			ctx,
@@ -1841,9 +1903,11 @@ func Shutdown(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc
 			}
 		}
 
-		r.Events().Publish(ctx, &machineapi.RestartEvent{
-			Cmd: int64(cmd),
-		})
+		r.Events().Publish(
+			ctx, &machineapi.RestartEvent{
+				Cmd: int64(cmd),
+			},
+		)
 
 		return runtime.RebootError{Cmd: cmd}
 	}, "shutdown"
@@ -2240,7 +2304,8 @@ func CleanupLegacyStaticPodFiles(seq runtime.Sequence, data interface{}) (runtim
 	}, "cleanupLegacyStaticPodFiles"
 }
 
-func pauseOnFailure(callback func(runtime.Sequence, interface{}) (runtime.TaskExecutionFunc, string),
+func pauseOnFailure(
+	callback func(runtime.Sequence, interface{}) (runtime.TaskExecutionFunc, string),
 	timeout time.Duration,
 ) func(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
 	return func(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
@@ -2249,7 +2314,12 @@ func pauseOnFailure(callback func(runtime.Sequence, interface{}) (runtime.TaskEx
 		return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) error {
 			err := f(ctx, logger, r)
 			if err != nil {
-				logger.Printf("%s failed, rebooting in %.0f minutes. You can use talosctl apply-config or talosctl edit mc to fix the issues, error:\n%s", name, timeout.Minutes(), err)
+				logger.Printf(
+					"%s failed, rebooting in %.0f minutes. You can use talosctl apply-config or talosctl edit mc to fix the issues, error:\n%s",
+					name,
+					timeout.Minutes(),
+					err,
+				)
 
 				timer := time.NewTimer(time.Minute * 5)
 				defer timer.Stop()

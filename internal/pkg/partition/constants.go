@@ -24,6 +24,7 @@ const (
 	FilesystemTypeNone FileSystemType = "none"
 	FilesystemTypeXFS  FileSystemType = "xfs"
 	FilesystemTypeVFAT FileSystemType = "vfat"
+	FilesystemTypeExt4 FileSystemType = "ext4"
 )
 
 // Partition default sizes.
@@ -32,7 +33,7 @@ const (
 
 	EFISize      = 100 * MiB
 	BIOSGrubSize = 1 * MiB
-	BootSize     = 1000 * MiB
+	BootSize     = 4000 * MiB
 	MetaSize     = 1 * MiB
 	StateSize    = 100 * MiB
 )
