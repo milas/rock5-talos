@@ -24,25 +24,39 @@ var dmesgCmd = &cobra.Command{
 	Long:  ``,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return WithClient(func(ctx context.Context, c *client.Client) error {
-			stream, err := c.Dmesg(ctx, follow, dmesgTail)
-			if err != nil {
-				return fmt.Errorf("error getting dmesg: %w", err)
-			}
+		withClient := func(f func(context.Context, *client.Client) error) error {
+			return WithClientMaintenance(applyConfigCmdFlags.certFingerprints, f)
+		}
 
-			return helpers.ReadGRPCStream(stream, func(data *common.Data, node string, multipleNodes bool) error {
-				if data.Bytes != nil {
-					fmt.Printf("%s: %s", node, data.Bytes)
+		return withClient(
+			func(ctx context.Context, c *client.Client) error {
+				stream, err := c.Dmesg(ctx, follow, dmesgTail)
+				if err != nil {
+					return fmt.Errorf("error getting dmesg: %w", err)
 				}
 
-				return nil
-			})
-		})
+				return helpers.ReadGRPCStream(
+					stream, func(data *common.Data, node string, multipleNodes bool) error {
+						if data.Bytes != nil {
+							fmt.Printf("%s: %s", node, data.Bytes)
+						}
+
+						return nil
+					},
+				)
+			},
+		)
 	},
 }
 
 func init() {
 	addCommand(dmesgCmd)
 	dmesgCmd.Flags().BoolVarP(&follow, "follow", "f", false, "specify if the kernel log should be streamed")
-	dmesgCmd.Flags().BoolVarP(&dmesgTail, "tail", "", false, "specify if only new messages should be sent (makes sense only when combined with --follow)")
+	dmesgCmd.Flags().BoolVarP(
+		&dmesgTail,
+		"tail",
+		"",
+		false,
+		"specify if only new messages should be sent (makes sense only when combined with --follow)",
+	)
 }

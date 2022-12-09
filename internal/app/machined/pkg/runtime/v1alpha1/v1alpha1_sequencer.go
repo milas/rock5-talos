@@ -83,9 +83,6 @@ func (*Sequencer) Initialize(r runtime.Runtime) []runtime.Phase {
 			SetRLimit,
 			DropCapabilities,
 		).Append(
-			"integrity",
-			WriteIMAPolicy,
-		).Append(
 			"etc",
 			CreateSystemCgroups,
 			CreateOSReleaseFile,
