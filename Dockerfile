@@ -682,6 +682,7 @@ ENV SOURCE_DATE_EPOCH ${SOURCE_DATE_EPOCH}
 RUN apk add --no-cache --update --no-scripts \
     bash \
     cpio \
+    e2fsprogs \
     efibootmgr \
     kmod \
     mtools \

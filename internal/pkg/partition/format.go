@@ -24,6 +24,7 @@ type FormatOptions struct {
 	FileSystemType FileSystemType
 	Size           uint64
 	Force          bool
+	Offset         uint64
 }
 
 // NewFormatOptions creates a new format options.
@@ -33,6 +34,14 @@ func NewFormatOptions(label string) *FormatOptions {
 		return &opts
 	}
 
+	return nil
+}
+
+func NewFormatOptionsWithOffset(label string, offset uint64) *FormatOptions {
+	if fo := NewFormatOptions(label); fo != nil {
+		fo.Offset = offset
+		return fo
+	}
 	return nil
 }
 
@@ -50,6 +59,8 @@ func Format(devname string, t *FormatOptions) error {
 		return makefs.VFAT(devname, opts...)
 	case FilesystemTypeXFS:
 		return makefs.XFS(devname, opts...)
+	case FilesystemTypeExt4:
+		return makefs.Ext4(devname, opts...)
 	default:
 		return fmt.Errorf("unsupported filesystem type: %q", t.FileSystemType)
 	}
@@ -101,9 +112,10 @@ var systemPartitions = map[string]FormatOptions{
 	constants.BootPartitionLabel: {
 		Label:          constants.BootPartitionLabel,
 		PartitionType:  LinuxFilesystemData,
-		FileSystemType: FilesystemTypeXFS,
+		FileSystemType: FilesystemTypeExt4,
 		Size:           BootSize,
 		Force:          true,
+		Offset:         32768 * 512,
 	},
 	constants.MetaPartitionLabel: {
 		Label:          constants.MetaPartitionLabel,

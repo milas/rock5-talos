@@ -6,17 +6,12 @@ package hardware
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/cosi-project/runtime/pkg/controller"
-	"github.com/cosi-project/runtime/pkg/resource"
 	"github.com/siderolabs/go-smbios/smbios"
 	"go.uber.org/zap"
 
-	hwadapter "github.com/siderolabs/talos/internal/app/machined/pkg/adapters/hardware"
 	runtimetalos "github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
-	pkgSMBIOS "github.com/siderolabs/talos/internal/pkg/smbios"
 	"github.com/siderolabs/talos/pkg/machinery/resources/hardware"
 )
 
@@ -64,53 +59,6 @@ func (ctrl *SystemInfoController) Run(ctx context.Context, r controller.Runtime,
 	case <-r.EventCh():
 	}
 
-	// smbios info is not available inside container, so skip the controller
-	if ctrl.V1Alpha1Mode == runtimetalos.ModeContainer {
-		return nil
-	}
-	// controller runs only once
-	if ctrl.SMBIOS == nil {
-		s, err := pkgSMBIOS.GetSMBIOSInfo()
-		if err != nil {
-			return err
-		}
-
-		ctrl.SMBIOS = s
-	}
-
-	if err := r.Modify(ctx, hardware.NewSystemInformation(hardware.SystemInformationID), func(res resource.Resource) error {
-		hwadapter.SystemInformation(res.(*hardware.SystemInformation)).Update(&ctrl.SMBIOS.SystemInformation)
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error updating objects: %w", err)
-	}
-
-	for _, p := range ctrl.SMBIOS.ProcessorInformation {
-		// replaces `CPU 0` with `CPU-0`
-		id := strings.ReplaceAll(p.SocketDesignation, " ", "-")
-
-		if err := r.Modify(ctx, hardware.NewProcessorInfo(id), func(res resource.Resource) error {
-			hwadapter.Processor(res.(*hardware.Processor)).Update(&p)
-
-			return nil
-		}); err != nil {
-			return fmt.Errorf("error updating objects: %w", err)
-		}
-	}
-
-	for _, m := range ctrl.SMBIOS.MemoryDevices {
-		// replaces `SIMM 0` with `SIMM-0`
-		id := strings.ReplaceAll(m.DeviceLocator, " ", "-")
-
-		if err := r.Modify(ctx, hardware.NewMemoryModuleInfo(id), func(res resource.Resource) error {
-			hwadapter.MemoryModule(res.(*hardware.MemoryModule)).Update(&m)
-
-			return nil
-		}); err != nil {
-			return fmt.Errorf("error updating objects: %w", err)
-		}
-	}
-
+	// TODO(milas): Rock 5B / RK3588 does not have any SMBIOS support currently
 	return nil
 }

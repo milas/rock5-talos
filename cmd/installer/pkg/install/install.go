@@ -211,7 +211,7 @@ func (i *Installer) Install(seq runtime.Sequence) (err error) {
 	// Mount the partitions.
 	mountpoints := mount.NewMountPoints()
 
-	for _, label := range []string{constants.BootPartitionLabel, constants.EFIPartitionLabel} {
+	for _, label := range []string{constants.BootPartitionLabel} {
 		err = func() error {
 			var device string
 			// searching targets for the device to be used
@@ -282,30 +282,6 @@ func (i *Installer) Install(seq runtime.Sequence) (err error) {
 
 	if !i.options.Bootloader {
 		return nil
-	}
-
-	var conf *grub.Config
-	if i.bootloader == nil {
-		conf = grub.NewConfig(i.cmdline.String())
-	} else {
-		existingConf, ok := i.bootloader.(*grub.Config)
-		if !ok {
-			return fmt.Errorf("unsupported bootloader type: %T", i.bootloader)
-		}
-		if err = existingConf.Put(i.Next, i.cmdline.String()); err != nil {
-			return err
-		}
-		existingConf.Default = i.Next
-		existingConf.Fallback = i.Current
-
-		conf = existingConf
-	}
-
-	i.bootloader = conf
-
-	err = i.bootloader.Install(i.options.Disk, i.options.Arch)
-	if err != nil {
-		return err
 	}
 
 	if i.options.Board != constants.BoardNone {
