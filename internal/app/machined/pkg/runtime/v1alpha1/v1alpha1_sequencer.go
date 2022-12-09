@@ -26,10 +26,12 @@ type PhaseList []runtime.Phase
 
 // Append appends a task to the phase list.
 func (p PhaseList) Append(name string, tasks ...runtime.TaskSetupFunc) PhaseList {
-	p = append(p, runtime.Phase{
-		Name:  name,
-		Tasks: tasks,
-	})
+	p = append(
+		p, runtime.Phase{
+			Name:  name,
+			Tasks: tasks,
+		},
+	)
 
 	return p
 }
@@ -80,11 +82,12 @@ func (*Sequencer) Initialize(r runtime.Runtime) []runtime.Phase {
 			MountBPFFS,
 			MountCgroups,
 			MountPseudoFilesystems,
+			LoadDrivers,
 			SetRLimit,
 			DropCapabilities,
-		).Append(
-			"integrity",
-			WriteIMAPolicy,
+			// ).Append(
+			// 	"integrity",
+			// 	WriteIMAPolicy,
 		).Append(
 			"etc",
 			CreateSystemCgroups,

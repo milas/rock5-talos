@@ -47,7 +47,12 @@ type Device struct {
 // NewManifest initializes and returns a Manifest.
 //
 //nolint:gocyclo
-func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound bool, opts *Options) (manifest *Manifest, err error) {
+func NewManifest(
+	label string,
+	sequence runtime.Sequence,
+	bootPartitionFound bool,
+	opts *Options,
+) (manifest *Manifest, err error) {
 	if label == "" {
 		return nil, fmt.Errorf("a label is required, got \"\"")
 	}
@@ -115,41 +120,83 @@ func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound boo
 		manifest.Targets[opts.Disk] = []*Target{}
 	}
 
-	efiTarget := EFITarget(opts.Disk, nil)
-	biosTarget := BIOSTarget(opts.Disk, nil)
+	var targets []*Target
+
+	// efiTarget := EFITarget(opts.Disk, nil)
+	// biosTarget := BIOSTarget(opts.Disk, nil)
 
 	var bootTarget *Target
 
 	if opts.Bootloader {
-		bootTarget = BootTarget(opts.Disk, &Target{
-			PreserveContents: bootPartitionFound,
-			Assets: []*Asset{
-				{
-					Source:      fmt.Sprintf(constants.KernelAssetPath, opts.Arch),
-					Destination: filepath.Join(constants.BootMountPoint, label, constants.KernelAsset),
-				},
-				{
-					Source:      fmt.Sprintf(constants.InitramfsAssetPath, opts.Arch),
-					Destination: filepath.Join(constants.BootMountPoint, label, constants.InitramfsAsset),
+		bootTarget = BootTarget(
+			opts.Disk, &Target{
+				// FormatOptions:    partition.NewFormatOptionsWithOffset("boot", 32768),
+				PreserveContents: bootPartitionFound,
+				Assets: []*Asset{
+					{
+						Source:      fmt.Sprintf(constants.KernelAssetPath, opts.Arch),
+						Destination: filepath.Join(constants.BootMountPoint, label, constants.KernelAsset),
+					},
+					{
+						Source:      fmt.Sprintf(constants.InitramfsAssetPath, opts.Arch),
+						Destination: filepath.Join(constants.BootMountPoint, label, constants.InitramfsAsset),
+					},
+					{
+						Source:      fmt.Sprintf(constants.ExtlinuxAssetPath, opts.Arch),
+						Destination: filepath.Join(constants.BootMountPoint, constants.ExtlinuxAsset),
+					},
+					{
+						Source: filepath.Join(
+							fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+							"rockchip",
+							"rk3588-rock-5b.dtb",
+						),
+						Destination: filepath.Join(
+							constants.BootMountPoint,
+							label,
+							"dtbs",
+							"rockchip",
+							"rk3588-rock-5b.dtb",
+						),
+					},
+					{
+						Source: filepath.Join(
+							fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+							"rockchip",
+							"rk3588-uart7-m2.dtbo",
+						),
+						Destination: filepath.Join(
+							constants.BootMountPoint,
+							label,
+							"dtbs",
+							"rockchip",
+							"overlay",
+							"rk3588-uart7-m2.dtbo",
+						),
+					},
 				},
 			},
-		})
+		)
 	}
 
-	metaTarget := MetaTarget(opts.Disk, &Target{
-		PreserveContents: bootPartitionFound,
-	})
-
-	stateTarget := StateTarget(opts.Disk, &Target{
-		PreserveContents: bootPartitionFound,
-		FormatOptions: &partition.FormatOptions{
-			FileSystemType: partition.FilesystemTypeNone,
+	metaTarget := MetaTarget(
+		opts.Disk, &Target{
+			PreserveContents: bootPartitionFound,
 		},
-	})
+	)
+
+	stateTarget := StateTarget(
+		opts.Disk, &Target{
+			PreserveContents: bootPartitionFound,
+			FormatOptions: &partition.FormatOptions{
+				FileSystemType: partition.FilesystemTypeNone,
+			},
+		},
+	)
 
 	ephemeralTarget := EphemeralTarget(opts.Disk, NoFilesystem)
 
-	targets := []*Target{efiTarget, biosTarget, bootTarget, metaTarget, stateTarget, ephemeralTarget}
+	targets = append(targets, bootTarget, metaTarget, stateTarget, ephemeralTarget)
 
 	if !opts.Force {
 		for _, target := range targets {
@@ -292,7 +339,11 @@ func (m *Manifest) executeOnDevice(device Device, targets []*Target) (err error)
 			return err
 		}
 
-		log.Printf("logical/physical block size: %d/%d", pt.Header().LBA.LogicalBlockSize, pt.Header().LBA.PhysicalBlockSize)
+		log.Printf(
+			"logical/physical block size: %d/%d",
+			pt.Header().LBA.LogicalBlockSize,
+			pt.Header().LBA.PhysicalBlockSize,
+		)
 		log.Printf("minimum/optimal I/O size: %d/%d", pt.Header().LBA.MinimalIOSize, pt.Header().LBA.OptimalIOSize)
 
 		if err = pt.Write(); err != nil {
@@ -367,8 +418,8 @@ func (m *Manifest) executeOnDevice(device Device, targets []*Target) (err error)
 		return err
 	}
 
-	for i, target := range targets {
-		if err = target.Partition(pt, i, bd); err != nil {
+	for _, target := range targets {
+		if err = target.Partition(pt); err != nil {
 			return fmt.Errorf("failed to partition device: %w", err)
 		}
 	}
@@ -380,19 +431,21 @@ func (m *Manifest) executeOnDevice(device Device, targets []*Target) (err error)
 	for _, target := range targets {
 		target := target
 
-		err = retry.Constant(time.Minute, retry.WithUnits(100*time.Millisecond)).Retry(func() error {
-			e := target.Format()
-			if e != nil {
-				if strings.Contains(e.Error(), "No such file or directory") {
-					// workaround problem with partition device not being visible immediately after partitioning
-					return retry.ExpectedError(e)
+		err = retry.Constant(time.Minute, retry.WithUnits(100*time.Millisecond)).Retry(
+			func() error {
+				e := target.Format()
+				if e != nil {
+					if strings.Contains(e.Error(), "No such file or directory") {
+						// workaround problem with partition device not being visible immediately after partitioning
+						return retry.ExpectedError(e)
+					}
+
+					return e
 				}
 
-				return e
-			}
-
-			return nil
-		})
+				return nil
+			},
+		)
 
 		if err != nil {
 			return fmt.Errorf("failed to format device: %w", err)
@@ -457,12 +510,14 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 			fnmatchFilters []string
 		)
 
-		sources := append([]PreserveSource{
-			{
-				Label:          target.Label,
-				FileSystemType: target.FileSystemType,
-			},
-		}, target.ExtraPreserveSources...)
+		sources := append(
+			[]PreserveSource{
+				{
+					Label:          target.Label,
+					FileSystemType: target.FileSystemType,
+				},
+			}, target.ExtraPreserveSources...,
+		)
 
 		for _, source := range sources {
 			// find matching existing partition table entry
@@ -478,7 +533,11 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 		}
 
 		if sourcePart == nil {
-			log.Printf("warning: failed to preserve contents of %q on %q, as source partition wasn't found", target.Label, device.Device)
+			log.Printf(
+				"warning: failed to preserve contents of %q on %q, as source partition wasn't found",
+				target.Label,
+				device.Device,
+			)
 
 			continue
 		}

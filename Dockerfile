@@ -650,6 +650,7 @@ FROM alpine:3.17.0 AS installer
 RUN apk add --no-cache --update --no-scripts \
     bash \
     cpio \
+    e2fsprogs \
     efibootmgr \
     mtools \
     qemu-img \
