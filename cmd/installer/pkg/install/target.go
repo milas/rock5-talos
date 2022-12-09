@@ -222,6 +222,10 @@ func (t *Target) Partition(pt *gpt.GPT, pos int, bd *blockdevice.BlockDevice) (e
 		opts = append(opts, gpt.WithMaximumSize(true))
 	}
 
+	if t.Offset != 0 {
+		opts = append(opts, gpt.WithOffset(t.Offset))
+	}
+
 	if t.LegacyBIOSBootable {
 		opts = append(opts, gpt.WithLegacyBIOSBootableAttribute(true))
 	}
@@ -336,7 +340,13 @@ func withTemporaryMounted(partPath string, flags uintptr, fileSystemType partiti
 }
 
 // SaveContents saves contents of partition to the target (in-memory).
-func (t *Target) SaveContents(device Device, source *gpt.Partition, fileSystemType partition.FileSystemType, fnmatchFilters []string) error {
+func (t *Target) SaveContents(
+	device Device,
+	source *gpt.Partition,
+	fileSystemType partition.FileSystemType,
+	fnmatchFilters []string,
+	fnignoreFilters []string,
+) error {
 	partPath, err := util.PartPath(device.Device, int(source.Number))
 	if err != nil {
 		return err
@@ -345,7 +355,7 @@ func (t *Target) SaveContents(device Device, source *gpt.Partition, fileSystemTy
 	if fileSystemType == partition.FilesystemTypeNone {
 		err = t.saveRawContents(partPath)
 	} else {
-		err = t.saveFilesystemContents(partPath, fileSystemType, fnmatchFilters)
+		err = t.saveFilesystemContents(partPath, fileSystemType, fnmatchFilters, fnignoreFilters)
 	}
 
 	if err != nil {
@@ -380,12 +390,25 @@ func (t *Target) saveRawContents(partPath string) error {
 	return src.Close()
 }
 
-func (t *Target) saveFilesystemContents(partPath string, fileSystemType partition.FileSystemType, fnmatchFilters []string) error {
+func (t *Target) saveFilesystemContents(
+	partPath string,
+	fileSystemType partition.FileSystemType,
+	fnmatchFilters []string,
+	fnignoreFilters []string,
+) error {
 	t.Contents = bytes.NewBuffer(nil)
 
-	return withTemporaryMounted(partPath, unix.MS_RDONLY, fileSystemType, t.Label, func(mountPath string) error {
-		return archiver.TarGz(context.TODO(), mountPath, t.Contents, archiver.WithFnmatchPatterns(fnmatchFilters...))
-	})
+	return withTemporaryMounted(
+		partPath, unix.MS_RDONLY, fileSystemType, t.Label, func(mountPath string) error {
+			return archiver.TarGz(
+				context.TODO(),
+				mountPath,
+				t.Contents,
+				archiver.WithFnmatchPatterns(fnmatchFilters...),
+				archiver.WithFnignorePatterns(fnignoreFilters...),
+			)
+		},
+	)
 }
 
 // RestoreContents restores previously saved contents to the disk.
