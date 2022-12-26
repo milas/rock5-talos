@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile-upstream:1.2.0-labs
+# syntax = docker/dockerfile-upstream:1.4.0-labs
 
 # Meta args applied to stage base names.
 
@@ -77,6 +77,8 @@ FROM --platform=arm64 ghcr.io/siderolabs/kmod:${PKGS} AS pkg-kmod-arm64
 FROM ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel
 FROM --platform=amd64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-amd64
 FROM --platform=arm64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-arm64
+
+FROM ghcr.io/milas/rock5b-kernel-talos AS rock5b-kernel
 
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
@@ -382,7 +384,7 @@ COPY --from=talosctl-linux /talosctl-linux-${TARGETARCH} /talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/talosctl"]
 
 FROM base AS talosctl-darwin-amd64-build
@@ -511,6 +513,7 @@ COPY --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --from=pkg-kernel-arm64 /lib/modules /rootfs/lib/modules
 COPY --from=machined-build-arm64 /machined /rootfs/sbin/init
+COPY --from=rock5b-kernel /lib/modules /rootfs/lib/modules
 # the orderly_poweroff call by the kernel will call '/sbin/poweroff'
 RUN ln /rootfs/sbin/init /rootfs/sbin/poweroff
 RUN chmod +x /rootfs/sbin/poweroff
@@ -596,6 +599,12 @@ RUN set -o pipefail \
 
 FROM initramfs-archive-${TARGETARCH} AS initramfs-archive
 
+FROM alpine AS rock5b-u-boot
+
+RUN apk add --no-cache curl
+RUN mkdir -p /out && \
+    curl -sSL -o /out/u-boot.img https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-g3caf61a44c2-debug.img
+
 FROM scratch AS initramfs
 ARG TARGETARCH
 COPY --from=initramfs-archive /initramfs.xz /initramfs-${TARGETARCH}.xz
@@ -605,7 +614,7 @@ COPY --from=initramfs-archive /initramfs.xz /initramfs-${TARGETARCH}.xz
 
 FROM scratch AS talos
 COPY --from=rootfs / /
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/sbin/init"]
 
 # The installer target generates an image that can be used to install Talos to
@@ -630,8 +639,13 @@ COPY --from=initramfs-archive-amd64 /initramfs.xz /usr/install/amd64/initramfs.x
 
 FROM scratch AS install-artifacts-arm64
 COPY --from=pkg-grub-arm64 /usr/lib/grub /usr/lib/grub
-COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
-COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+#COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
+#COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+COPY --from=rock5b-u-boot --link /out/u-boot.img /usr/install/arm64/u-boot/rock_5b/
+COPY --from=rock5b-kernel --link /vmlinuz /usr/install/arm64/
+COPY --from=rock5b-kernel --link /dtb /usr/install/arm64/dtb
+COPY hack/rock5b/extlinux.conf /usr/install/arm64/extlinux/extlinux.conf
+
 COPY --from=initramfs-archive-arm64 /initramfs.xz /usr/install/arm64/initramfs.xz
 COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
 COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
@@ -667,7 +681,7 @@ RUN ln -s /bin/installer /bin/talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/bin/installer"]
 ONBUILD RUN apk add --no-cache --update \
     cpio \
