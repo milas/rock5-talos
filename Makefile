@@ -70,10 +70,14 @@ BUILD := docker buildx build
 PLATFORM ?= linux/amd64
 PROGRESS ?= auto
 PUSH ?= false
+EXTRA_CONTEXT ?= ''
 COMMON_ARGS := --file=Dockerfile
 COMMON_ARGS += --progress=$(PROGRESS)
 COMMON_ARGS += --platform=$(PLATFORM)
 COMMON_ARGS += --push=$(PUSH)
+ifneq ($(EXTRA_CONTEXT), '')
+COMMON_ARGS += --build-context=$(EXTRA_CONTEXT)
+endif
 COMMON_ARGS += --build-arg=TOOLS=$(TOOLS)
 COMMON_ARGS += --build-arg=PKGS=$(PKGS)
 COMMON_ARGS += --build-arg=EXTRAS=$(EXTRAS)
