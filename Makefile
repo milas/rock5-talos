@@ -1,9 +1,13 @@
+ifndef ROCK5_BOARD
+$(error ROCK5_BOARD is required)
+endif
+
 REGISTRY ?= ghcr.io
 USERNAME ?= siderolabs
 SHA ?= $(shell git describe --match=none --always --abbrev=8 --dirty)
 TAG ?= $(shell git describe --tag --always --dirty --match v[0-9]\*)
 ABBREV_TAG ?= $(shell git describe --tag --always --match v[0-9]\* --abbrev=0 )
-TAG_SUFFIX ?=
+TAG_SUFFIX ?= -$(ROCK5_BOARD)
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --pretty=%ct)
 IMAGE_REGISTRY ?= $(REGISTRY)
 IMAGE_TAG ?= $(TAG)$(TAG_SUFFIX)
@@ -100,10 +104,21 @@ BUILD := docker buildx build
 PLATFORM ?= linux/amd64
 PROGRESS ?= auto
 PUSH ?= false
+PROVENANCE ?= true
+ROCK5_KERNEL ?= ''
+ROCK5_UBOOT ?= ''
+
 COMMON_ARGS := --file=Dockerfile
 COMMON_ARGS += --progress=$(PROGRESS)
 COMMON_ARGS += --platform=$(PLATFORM)
 COMMON_ARGS += --push=$(PUSH)
+COMMON_ARGS += --provenance=$(PROVENANCE)
+ifneq ($(ROCK5_UBOOT), '')
+COMMON_ARGS += --build-context=u-boot-$(ROCK5_BOARD)=$(ROCK5_UBOOT)
+endif
+ifneq ($(ROCK5_KERNEL), '')
+COMMON_ARGS += --build-context=rock5-kernel=$(ROCK5_KERNEL)
+endif
 COMMON_ARGS += --build-arg=TOOLS=$(TOOLS)
 COMMON_ARGS += --build-arg=PKGS=$(PKGS)
 COMMON_ARGS += --build-arg=EXTRAS=$(EXTRAS)
@@ -136,6 +151,7 @@ COMMON_ARGS += --build-arg=SHA=$(SHA)
 COMMON_ARGS += --build-arg=USERNAME=$(USERNAME)
 COMMON_ARGS += --build-arg=REGISTRY=$(REGISTRY)
 COMMON_ARGS += --build-arg=ABBREV_TAG=$(ABBREV_TAG)
+COMMON_ARGS += --build-arg=ROCK5_BOARD=$(ROCK5_BOARD)
 
 CI_ARGS ?=
 
@@ -208,7 +224,7 @@ docker-%: ## Builds the specified target defined in the Dockerfile using the doc
 	@$(MAKE) target-$* TARGET_ARGS="--output type=docker,dest=$(DEST)/$*.tar,name=$(REGISTRY_AND_USERNAME)/$*:$(IMAGE_TAG) $(TARGET_ARGS)"
 
 registry-%: ## Builds the specified target defined in the Dockerfile using the image/registry output type. The build result will be pushed to the registry if PUSH=true.
-	@$(MAKE) target-$* TARGET_ARGS="--output type=image,name=$(REGISTRY_AND_USERNAME)/$*:$(IMAGE_TAG) $(TARGET_ARGS)"
+	@$(MAKE) target-$* TARGET_ARGS="--output type=image,name=$(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-$*}:$(IMAGE_TAG) $(TARGET_ARGS)"
 
 hack-test-%: ## Runs the specified script in ./hack/test with well known environment variables.
 	@./hack/test/$*.sh
@@ -308,8 +324,8 @@ images-essential: image-aws image-gcp image-metal secureboot-installer ## Builds
 images: image-aws image-azure image-digital-ocean image-exoscale image-gcp image-hcloud image-iso image-metal image-nocloud image-openstack image-oracle image-scaleway image-upcloud image-vmware image-vultr ## Builds all known images (AWS, Azure, DigitalOcean, Exoscale, GCP, HCloud, Metal, NoCloud, Openstack, Oracle, Scaleway, UpCloud, Vultr and VMware).
 
 sbc-%: ## Builds the specified SBC image. Valid options are rpi_generic, rock64, bananapi_m64, libretech_all_h3_cc_h5, rockpi_4, rockpi_4c, pine64, jetson_nano and nanopi_r4s (e.g. sbc-rpi_generic)
-	@docker pull $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG)
-	@docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
+	@docker pull --platform=linux/arm64 $(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-imager}:$(IMAGE_TAG)
+	@docker run --platform=linux/arm64 --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-imager}:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
 
 sbcs: sbc-rpi_generic sbc-rock64 sbc-bananapi_m64 sbc-libretech_all_h3_cc_h5 sbc-rockpi_4 sbc-rockpi_4c sbc-pine64 sbc-jetson_nano sbc-nanopi_r4s ## Builds all known SBC images (Raspberry Pi 4, Rock64, Banana Pi M64, Radxa ROCK Pi 4, Radxa ROCK Pi 4c, Pine64, Libre Computer Board ALL-H3-CC, Jetson Nano and Nano Pi R4S).
 
