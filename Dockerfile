@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile-upstream:1.2.0-labs
+# syntax = docker/dockerfile:1-labs
 
 # Meta args applied to stage base names.
 
@@ -7,6 +7,7 @@ ARG IMPORTVET
 ARG PKGS
 ARG EXTRAS
 ARG INSTALLER_ARCH
+ARG BOARD="rock-5b"
 
 # Resolve package images using ${PKGS} to be used later in COPY --from=.
 
@@ -77,6 +78,12 @@ FROM --platform=arm64 ghcr.io/siderolabs/kmod:${PKGS} AS pkg-kmod-arm64
 FROM ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel
 FROM --platform=amd64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-amd64
 FROM --platform=arm64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-arm64
+
+FROM docker.io/milas/rock5-talos-kernel:${BOARD} AS rock5-kernel
+
+FROM scratch AS rock5-extlinux
+ARG BOARD
+COPY hack/boards/${BOARD}/extlinux.conf /extlinux.conf
 
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
@@ -382,7 +389,7 @@ COPY --from=talosctl-linux /talosctl-linux-${TARGETARCH} /talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5-talos
 ENTRYPOINT ["/talosctl"]
 
 FROM base AS talosctl-darwin-amd64-build
@@ -511,6 +518,7 @@ COPY --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --from=pkg-kernel-arm64 /lib/modules /rootfs/lib/modules
 COPY --from=machined-build-arm64 /machined /rootfs/sbin/init
+COPY --from=rock5-kernel /lib/modules /rootfs/lib/modules
 # the orderly_poweroff call by the kernel will call '/sbin/poweroff'
 RUN ln /rootfs/sbin/init /rootfs/sbin/poweroff
 RUN chmod +x /rootfs/sbin/poweroff
@@ -605,7 +613,7 @@ COPY --from=initramfs-archive /initramfs.xz /initramfs-${TARGETARCH}.xz
 
 FROM scratch AS talos
 COPY --from=rootfs / /
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5-talos
 ENTRYPOINT ["/sbin/init"]
 
 # The installer target generates an image that can be used to install Talos to
@@ -628,10 +636,23 @@ COPY --from=pkg-kernel-amd64 /boot/vmlinuz /usr/install/amd64/vmlinuz
 COPY --from=pkg-kernel-amd64 /dtb /usr/install/amd64/dtb
 COPY --from=initramfs-archive-amd64 /initramfs.xz /usr/install/amd64/initramfs.xz
 
+FROM milas/rock5-u-boot:latest-rock-5a-radxa AS u-boot-rock-5a
+
+#FROM milas/rock5-u-boot:latest-rock-5b-radxa AS u-boot-rock-5b
+FROM scratch AS u-boot-rock-5b
+
+ADD https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-g3caf61a44c2-debug.img /spi/spi_image.img
+
 FROM scratch AS install-artifacts-arm64
 COPY --from=pkg-grub-arm64 /usr/lib/grub /usr/lib/grub
-COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
-COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+#COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
+#COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+COPY --from=u-boot-rock-5a --link /spi/spi_image.img /usr/install/arm64/u-boot/rock_5a/u-boot.img
+COPY --from=u-boot-rock-5b --link /spi/spi_image.img /usr/install/arm64/u-boot/rock_5b/u-boot.img
+COPY --from=rock5-kernel --link /vmlinuz /usr/install/arm64/
+COPY --from=rock5-kernel --link /dtb /usr/install/arm64/dtb
+COPY --from=rock5-extlinux --link / /usr/install/arm64/extlinux
+
 COPY --from=initramfs-archive-arm64 /initramfs.xz /usr/install/arm64/initramfs.xz
 COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
 COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
@@ -667,7 +688,7 @@ RUN ln -s /bin/installer /bin/talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5-talos
 ENTRYPOINT ["/bin/installer"]
 ONBUILD RUN apk add --no-cache --update \
     cpio \
