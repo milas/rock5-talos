@@ -43,14 +43,8 @@ jobs:
         run: make sbc-rock_5b
 
       - name: Tag Talos Docker Image
-        uses: shrink/actions-docker-registry-tag@v3
-        with:
-          registry: index.docker.io
-          repository: ${{ env.USERNAME }}/${{ env.IMAGE_NAME }}
-          target: ${{ env.IMAGE_TAG }}
-          token: ${{ secrets.DOCKER_HUB_TOKEN }}
-          tags: |
-            ${{ github.ref_name }}
+        run: |
+          docker buildx imagetools create -t ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
