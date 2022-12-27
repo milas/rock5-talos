@@ -1,0 +1,97 @@
+name: Docker Images
+
+on:
+  push:
+    branches: [ 'sbc-rock5b' ]
+
+env:
+  REGISTRY: docker.io
+  USERNAME: ${{ github.actor }}
+
+jobs:
+  kernel:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      # we need the local repo contents to get files from `./hack/rock5b`
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.USERNAME }}/rock5b-kernel-talos
+          tags: type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          pull: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          target: kernel
+          platforms: linux/arm64
+          context: https://github.com/${{ github.actor }}/rock5b-docker-build.git
+          build-contexts: |
+            defconfig=./hack/rock5b
+            sdk=docker-image://ghcr.io/milas/rock5b-sdk
+            git-kernel=https://github.com/radxa/kernel.git#linux-5.10-gen-rkr3.4
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  talos-container:
+    runs-on: ubuntu-22.04
+    needs: kernel
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE_NAME: rock5b-talos
+      IMAGE_TAG: ${{ github.sha }}
+      PLATFORM: linux/arm64
+      PROGRESS: plain
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build and push Docker image
+        run: make installer
+        env:
+          PUSH: '1'
+          EXTRA_CONTEXT: ghcr.io/milas/rock5b-kernel-talos=docker-image://${{ needs.kernel.outputs.image }}

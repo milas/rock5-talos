@@ -1,75 +1,25 @@
-name: Create and publish a Docker image
+name: Release
 
 on:
   push:
-    branches: [ 'sbc-rock5b' ]
+    tags:
+      - "v*"
 
 env:
   REGISTRY: docker.io
   USERNAME: ${{ github.actor }}
+  IMAGE_NAME: rock5b-talos
+  IMAGE_TAG: ${{ github.sha }}
+  PLATFORM: linux/arm64
+  PROGRESS: plain
 
 jobs:
-  kernel:
+  release:
     runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
-
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          registry: docker.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      # we need the local repo contents to get files from `./hack/rock5b`
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.USERNAME }}/rock5b-kernel-talos
-          tags: type=sha
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          pull: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          target: kernel
-          platforms: linux/arm64
-          context: https://github.com/${{ github.actor }}/rock5b-docker-build.git
-          build-contexts: |
-            defconfig=./hack/rock5b
-            sdk=docker-image://ghcr.io/milas/rock5b-sdk
-            git-kernel=https://github.com/radxa/kernel.git#linux-5.10-gen-rkr3.4
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  talos-container:
-    runs-on: ubuntu-22.04
-    needs: kernel
 
     permissions:
       contents: read
       packages: write
-
-    env:
-      IMAGE_NAME: rock5b-talos
-      IMAGE_TAG: ${{ github.sha }}
-      PLATFORM: linux/arm64
-      PROGRESS: plain
 
     steps:
       - name: Set up Docker Buildx
@@ -87,40 +37,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Build and push Docker image
-        run: make installer
-        env:
-          PUSH: '1'
-          EXTRA_CONTEXT: ghcr.io/milas/rock5b-kernel-talos=docker-image://${{ needs.kernel.outputs.image }}
-
-      - name: Release tagged version of image
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          docker tag ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          docker push ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-
-  talos-flash:
-    runs-on: ubuntu-22.04
-    needs: talos-container
-
-    if: startsWith(github.ref, 'refs/tags/')
-
-    permissions:
-      contents: read
-      packages: write
-
-    env:
-      IMAGE_NAME: rock5b-talos
-      IMAGE_TAG: ${{ github.sha }}
-      PLATFORM: linux/arm64
-      PROGRESS: plain
-
-    steps:
       - uses: actions/checkout@v3
-      - run: make sbc-rock_5b
+
+      - name: Build Flashable Image for Rock 5B
+        run: make sbc-rock_5b
+
+      - name: Tag Talos Docker Image
+        uses: shrink/actions-docker-registry-tag@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          repository: ${{ env.USERNAME }}/${{ env.IMAGE_NAME }}
+          target: ${{ env.IMAGE_TAG }}
+          token: ${{ secrets.DOCKER_HUB_TOKEN }}
+          tags: |
+            ${{ github.ref_name }}
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
