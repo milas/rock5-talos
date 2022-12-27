@@ -55,6 +55,8 @@ jobs:
             defconfig=./hack/rock5b
             sdk=docker-image://ghcr.io/milas/rock5b-sdk
             git-kernel=https://github.com/radxa/kernel.git#linux-5.10-gen-rkr3.4
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   talos:
     runs-on: ubuntu-22.04
