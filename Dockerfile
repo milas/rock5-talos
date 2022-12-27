@@ -384,7 +384,7 @@ COPY --from=talosctl-linux /talosctl-linux-${TARGETARCH} /talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/talosctl"]
 
 FROM base AS talosctl-darwin-amd64-build
@@ -613,7 +613,7 @@ COPY --from=initramfs-archive /initramfs.xz /initramfs-${TARGETARCH}.xz
 
 FROM scratch AS talos
 COPY --from=rootfs / /
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/sbin/init"]
 
 # The installer target generates an image that can be used to install Talos to
@@ -680,7 +680,7 @@ RUN ln -s /bin/installer /bin/talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source=https://github.com/milas/rock5b-talos
 ENTRYPOINT ["/bin/installer"]
 ONBUILD RUN apk add --no-cache --update \
     cpio \
