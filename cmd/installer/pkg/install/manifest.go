@@ -163,6 +163,7 @@ func NewManifest(
 						Source: filepath.Join(
 							fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
 							"rockchip",
+							"overlay",
 							"rk3588-uart7-m2.dtbo",
 						),
 						Destination: filepath.Join(
