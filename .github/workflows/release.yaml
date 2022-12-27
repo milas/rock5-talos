@@ -45,7 +45,7 @@ jobs:
       - name: Tag Talos Docker Image
         uses: shrink/actions-docker-registry-tag@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: index.docker.io
           repository: ${{ env.USERNAME }}/${{ env.IMAGE_NAME }}
           target: ${{ env.IMAGE_TAG }}
           token: ${{ secrets.DOCKER_HUB_TOKEN }}
