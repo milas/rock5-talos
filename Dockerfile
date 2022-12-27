@@ -641,7 +641,7 @@ FROM scratch AS install-artifacts-arm64
 COPY --from=pkg-grub-arm64 /usr/lib/grub /usr/lib/grub
 #COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
 #COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
-COPY --from=rock5b-u-boot --link /out/u-boot.img /usr/install/arm64/u-boot/rock5_b/
+COPY --from=rock5b-u-boot --link /out/u-boot.img /usr/install/arm64/u-boot/rock_5b/
 COPY --from=rock5b-kernel --link /vmlinuz /usr/install/arm64/
 COPY --from=rock5b-kernel --link /dtb /usr/install/arm64/dtb
 COPY hack/rock5b/extlinux.conf /usr/install/arm64/extlinux/extlinux.conf
