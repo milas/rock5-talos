@@ -57,13 +57,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  talos:
+  talos-container:
     runs-on: ubuntu-22.04
     needs: kernel
 
     permissions:
       contents: read
       packages: write
+
+    env:
+      IMAGE_NAME: rock5b-talos
+      IMAGE_TAG: ${{ github.sha }}
+      PLATFORM: linux/arm64
+      PROGRESS: plain
 
     steps:
       - name: Set up Docker Buildx
@@ -87,8 +93,37 @@ jobs:
       - name: Build and push Docker image
         run: make installer
         env:
-          PLATFORM: linux/arm64
           PUSH: '1'
-          PROGRESS: plain
           EXTRA_CONTEXT: ghcr.io/milas/rock5b-kernel-talos=docker-image://${{ needs.kernel.outputs.image }}
-          IMAGE_NAME: rock5b-talos
+
+      - name: Release tagged version of image
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY }}/${{ env.USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+  talos-flash:
+    runs-on: ubuntu-22.04
+    needs: talos-container
+
+    if: startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE_NAME: rock5b-talos
+      IMAGE_TAG: ${{ github.sha }}
+      PLATFORM: linux/arm64
+      PROGRESS: plain
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: make sbc-rock_5b
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          fail_on_unmatched_files: true
+          files: _out/metal-rock_5b-arm64.img.xz
+          generate_release_notes: true
