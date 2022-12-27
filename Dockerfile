@@ -603,7 +603,7 @@ FROM alpine AS rock5b-u-boot
 
 RUN apk add --no-cache curl
 RUN mkdir -p /out && \
-    curl -qL -o /out/u-boot.img https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-g3caf61a44c2-debug.img
+    curl -sSL -o /out/u-boot.img https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-g3caf61a44c2-debug.img
 
 FROM scratch AS initramfs
 ARG TARGETARCH
