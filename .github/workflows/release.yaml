@@ -17,7 +17,7 @@ jobs:
       packages: write
 
     outputs:
-      image: ${{ steps.meta.tags }}
+      image: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Set up Docker Buildx
@@ -82,4 +82,4 @@ jobs:
           PLATFORM: linux/arm64
           PUSH: '1'
           PROGRESS: plain
-          EXTRA_CONTEXT: ghcr.io/milas/rock5b-kernel-talos=${{ needs.kernel.outputs.image }}
+          EXTRA_CONTEXT: ghcr.io/milas/rock5b-kernel-talos=docker-image://${{ needs.kernel.outputs.image }}
