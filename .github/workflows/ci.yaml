@@ -3,6 +3,8 @@ name: Docker Images
 on:
   push:
     branches: [ 'sbc-rock5b' ]
+    tags:
+      - "v*"
 
 env:
   REGISTRY: docker.io
@@ -89,6 +91,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          # need history for `git describe` to work for Talos `Makefile`
+          fetch-depth: 0
 
       - name: Build and push Talos installer image
         run: make installer
