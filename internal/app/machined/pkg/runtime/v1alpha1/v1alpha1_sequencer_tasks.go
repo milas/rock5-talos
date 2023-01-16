@@ -39,12 +39,6 @@ import (
 	"github.com/siderolabs/go-pointer"
 	"github.com/siderolabs/go-procfs/procfs"
 	"github.com/siderolabs/go-retry/retry"
-	clientv3 "go.etcd.io/etcd/client/v3"
-	"golang.org/x/sys/unix"
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"kernel.org/pub/linux/libs/security/libcap/cap"
-	"pault.ag/go/modprobe"
-
 	installer "github.com/siderolabs/talos/cmd/installer/pkg/install"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader"
@@ -78,6 +72,10 @@ import (
 	resourceruntime "github.com/siderolabs/talos/pkg/machinery/resources/runtime"
 	"github.com/siderolabs/talos/pkg/minimal"
 	"github.com/siderolabs/talos/pkg/version"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"golang.org/x/sys/unix"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
 
 // SetupLogger represents the SetupLogger task.
@@ -296,15 +294,6 @@ func MountPseudoFilesystems(seq runtime.Sequence, data interface{}) (runtime.Tas
 
 		return mount.Mount(mountpoints)
 	}, "mountPseudoFilesystems"
-}
-
-func LoadDrivers(seq runtime.Sequence, data interface{}) (runtime.TaskExecutionFunc, string) {
-	return func(ctx context.Context, logger *log.Logger, r runtime.Runtime) error {
-		if err := modprobe.Load("r8125", ""); err != nil {
-			return fmt.Errorf("r8125 load: %w", err)
-		}
-		return nil
-	}, "loadDrivers"
 }
 
 // SetRLimit represents the SetRLimit task.

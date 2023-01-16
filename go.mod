@@ -137,7 +137,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/klog/v2 v2.80.1
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.66
-	pault.ag/go/modprobe v0.1.2
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -298,7 +297,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.66 // indirect
-	pault.ag/go/topsort v0.0.0-20160530003732-f98d2ad46e1a // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect

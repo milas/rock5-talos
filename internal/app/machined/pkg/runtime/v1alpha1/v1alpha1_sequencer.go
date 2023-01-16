@@ -82,7 +82,6 @@ func (*Sequencer) Initialize(r runtime.Runtime) []runtime.Phase {
 			MountBPFFS,
 			MountCgroups,
 			MountPseudoFilesystems,
-			LoadDrivers,
 			SetRLimit,
 			DropCapabilities,
 			// ).Append(
