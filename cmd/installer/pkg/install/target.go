@@ -332,6 +332,7 @@ func (t *Target) SaveContents(
 	source *gpt.Partition,
 	fileSystemType partition.FileSystemType,
 	fnmatchFilters []string,
+	fnignoreFilters []string,
 ) error {
 	partPath, err := util.PartPath(device.Device, int(source.Number))
 	if err != nil {
@@ -341,7 +342,7 @@ func (t *Target) SaveContents(
 	if fileSystemType == partition.FilesystemTypeNone {
 		err = t.saveRawContents(partPath)
 	} else {
-		err = t.saveFilesystemContents(partPath, fileSystemType, fnmatchFilters)
+		err = t.saveFilesystemContents(partPath, fileSystemType, fnmatchFilters, fnignoreFilters)
 	}
 
 	if err != nil {
@@ -380,6 +381,7 @@ func (t *Target) saveFilesystemContents(
 	partPath string,
 	fileSystemType partition.FileSystemType,
 	fnmatchFilters []string,
+	fnignoreFilters []string,
 ) error {
 	t.Contents = bytes.NewBuffer(nil)
 
@@ -390,6 +392,7 @@ func (t *Target) saveFilesystemContents(
 				mountPath,
 				t.Contents,
 				archiver.WithFnmatchPatterns(fnmatchFilters...),
+				archiver.WithFnignorePatterns(fnignoreFilters...),
 			)
 		},
 	)

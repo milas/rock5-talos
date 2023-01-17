@@ -506,9 +506,10 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 		}
 
 		var (
-			sourcePart     *gpt.Partition
-			fileSystemType partition.FileSystemType
-			fnmatchFilters []string
+			sourcePart      *gpt.Partition
+			fileSystemType  partition.FileSystemType
+			fnmatchFilters  []string
+			fnignoreFilters []string
 		)
 
 		sources := append(
@@ -528,6 +529,17 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 					fileSystemType = source.FileSystemType
 					fnmatchFilters = source.FnmatchFilters
 
+					// HACK: for ext filesystems, the lost+found directory will
+					// already exist. we'll go ahead and ignore it AND its
+					// contents if it has any (/boot isn't r-w, so there isn't
+					// anything we'd ever need to recover from it)
+					if source.FileSystemType == partition.FilesystemTypeExt4 {
+						fnignoreFilters = []string{
+							"lost+found",
+							"lost+found/*",
+						}
+					}
+
 					break
 				}
 			}
@@ -543,7 +555,7 @@ func (m *Manifest) preserveContents(device Device, targets []*Target) (err error
 			continue
 		}
 
-		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters); err != nil {
+		if err = target.SaveContents(device, sourcePart, fileSystemType, fnmatchFilters, fnignoreFilters); err != nil {
 			log.Printf("warning: failed to preserve contents of %q on %q: %s", target.Label, device.Device, err)
 		}
 	}
