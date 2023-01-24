@@ -1,63 +1,129 @@
 <!-- markdownlint-disable MD041 -->
 
-<p align="center">
-  <h1 align="center">Talos Linux</h1>
-  <p align="center">A modern OS for Kubernetes.</p>
-  <p align="center">
-    <a href="https://github.com/talos-systems/talos/releases/latest">
-      <img alt="Release" src="https://img.shields.io/github/release/talos-systems/talos.svg?logo=github&logoColor=white&style=flat-square">
-    </a>
-    <a href="https://github.com/talos-systems/talos/releases/latest">
-      <img alt="Pre-release" src="https://img.shields.io/github/release-pre/talos-systems/talos.svg?label=pre-release&logo=GitHub&logoColor=white&style=flat-square">
-    </a>
-  </p>
-</p>
+---
+
+<h1 align="center">🍴 Fork of <a href="https://github.com/siderolabs/talos/">siderolabs/talos</a> to support Radxa Rock 5 🍴</h1>
 
 ---
 
-**Talos** is a modern OS for running Kubernetes: secure, immutable, and minimal.
-Talos is fully open source, production-ready, and supported by the people at [Sidero Labs](https://www.SideroLabs.com/)
-All system management is done via an API - there is no shell or interactive console.
-Benefits include:
+# Why does this exist?
+Currently, the Radxa Rock 5B, like all other Rockchip RK3588-based boards, requires a BSP kernel.
+Additionally, there's no mature EFI bootloader support.
 
-- **Security**: Talos reduces your attack surface: It's minimal, hardened, and immutable.
-  All API access is secured with mutual TLS (mTLS) authentication.
-- **Predictability**: Talos eliminates configuration drift, reduces unknown factors by employing immutable infrastructure ideology, and delivers atomic updates.
-- **Evolvability**: Talos simplifies your architecture, increases your agility, and always delivers current stable Kubernetes and Linux versions.
+Due to this situation, until/if mainline Linux RK3588 support improves, it's not practical to support the board in its current state in the main Talos codebase.
+As a result, this is a "friendly fork": it exists to serve a specific niche and will cease to exist as soon as upstream support is practical.
+(I have no affiliation with Sidero Labs! But this is way too extensive & hacky to be reasonable to open a PR for.)
 
-## Documentation
+_Please_ be respectful of upstream if you run into any problems.
+If there's any doubt about whether an issue is caused by this fork, err on the side of making an issue here first!
 
-For instructions on deploying and managing Talos, see the [Documentation](https://www.talos.dev/docs/latest/).
+# Device Support
+**Stable**
+* [Rock 5B](https://wiki.radxa.com/Rock5/5B)
 
-## Community
+**In Progress**
+* [Rock 5A](https://wiki.radxa.com/Rock5/5a) - UNTESTED (board is not released)
 
-- Slack: Join our [slack channel](https://slack.dev.talos-systems.io)
-- Support: Questions, bugs, feature requests [GitHub Discussions](https://github.com/talos-systems/talos/discussions)
-- Forum: [community](https://groups.google.com/a/SideroLabs.com/forum/#!forum/community)
-- Twitter: [@SideroLabs](https://twitter.com/SideroLabs)
-- Email: [info@SideroLabs.com](mailto:info@SideroLabs.com)
+# Install
+> 💾 I've only tested this using eMMC, but it should work for an SD card as well
 
-If you're interested in this project and would like to help in engineering efforts or have general usage questions, we are happy to have you!
-We hold a weekly meeting that all audiences are welcome to attend.
+Flashable images are available from the [releases](https://github.com/milas/rock5-talos/releases/latest).
 
-We would appreciate your feedback so that we can make Talos even better!
-To do so, you can take our [survey](https://docs.google.com/forms/d/1TUna5YTYGCKot68Y9YN_CLobY6z9JzLVCq1G7DoyNjA/edit).
+You can write this to your eMMC/SD card using `dd`, Balena Etcher, etc. 
 
-### Office Hours
+# Machine Configuration
+Use the `docker.io/milas/rock5-talos` images instead of the upstream Talos Linux images.
+These include a modified version of Talos to support the Rock 5B in addition to the vendor U-Boot & kernel.
 
-- When: Mondays at 16:30 UTC.
-- Where: [Google Meet](https://meet.google.com/day-pxhv-zky).
+```yaml
+machine:
+  install:
+    # for eMMC, use /dev/mmcblk0
+    # for SD card, use /dev/mmcblk1
+    disk: /dev/mmcblk0
+    image: docker.io/milas/rock5-talos:v1.3.5-rock5-rock-5b
+    bootloader: true
+    wipe: false
+```
 
-You can subscribe to this meeting by joining the community forum above.
+# Building
+## Kernel
+The kernel is built using the config at [`./hack/boards/defconfig/rockchip_linux_defconfig`](https://github.com/milas/rock5-talos/blob/main/hack/boards/defconfig/rockchip_linux_defconfig).
 
-> Note: You can convert the meeting hours to your [local time](https://everytimezone.com/s/599e61d6).
+Builds are done using [milas/rock5-toolchain](https://github.com/milas/rock5-toolchain) which provides a Dockerized build system to build the BSP kernel.
 
-## Contributing
+To build & push:
+```shell
+IMAGE="docker.io/milas/rock5-kernel-talos" docker buildx bake \
+  --push \
+  --set "kernel.tags=$IMAGE" \
+  kernel
+```
 
-Contributions are welcomed and appreciated!
-See [Contributing](CONTRIBUTING.md) for our guidelines.
+## Talos Installer (OCI Container Image)
+The `Makefile` has been modified slightly to add some Rock 5 specific options, which
+will be kept behind the `ROCK5_` prefix to distinguish from the Talos ones. Review
+the `Makefile` to find the full set.
 
-## License
+It's possible to pass a custom context for U-Boot. For example, this would build an
+image with the Collabora build of U-Boot for the 5B:
+```
+ROCK5_UBOOT='docker-image://milas/rock5-u-boot:latest-rock-5b-collabora'
+```
+
+To build & push:
+```shell
+make installer \
+  PUSH=1 \
+  IMAGE_NAME="rock5-talos" \
+  ROCK5_BOARD="rock-5b" \
+  PLATFORM="linux/arm64"
+```
+
+See `Makefile` for more variables, e.g. `IMAGE_REGISTRY` and `USERNAME`.
+
+New installer container images are published on every commit and on tag for releases.
+
+## Flashable Talos Image (`.img.xz`)
+You can create a flashable image as well after building & pushing the installer.
+
+See `Makefile` for more variables, e.g. `IMAGE_REGISTRY` and `USERNAME`.
+
+To create in `./_out/`:
+```shell
+mkdir -p ./_out/
+make sbc-rock_5b IMAGE_NAME="rock5-talos" IMAGE_TAG="latest" ROCK5_BOARD="rock-5b"
+```
+
+New flashable images are published for [each Rock 5 Talos release](https://github.com/milas/rock5-talos/releases).
+
+# Differences from [siderolabs/talos](https://github.com/siderolabs/talos)
+* Support [radxa/u-boot](https://github.com/radxa/u-boot) ([#1](https://github.com/milas/rock5-talos/issues/1)):
+  * Adjust partition offset logic
+  * Remove BIOS/EFI partitions entirely
+  * Change Talos root partition to ext4 from xfs
+  * Add `rk3588-rock-5b.dtb` (& `rk3588-uart7-m2.dtbo`) directly to
+    Talos root partition (these would normally be in the EFI partition)
+  * Add (hardcoded) `/extlinux/extlinux.conf` directly to Talos
+    root partition
+    >⚠️ As U-Boot directly boots the kernel (no GRUB), `extlinux.conf`
+      contains the kernel args, meaning there's no way to customize them
+      right now since it's not templated/generated by the installer! ([#3](https://github.com/milas/rock5-talos/issues/3))
+* Support [radxa/kernel](https://github.com/radxa/kernel):
+  * Remove `proc.sys.kernel.yama.ptrace_scope` from KSPP list
+  * Disable IMA policy
+  * ~~Add new step to `systemRequirements` phase to forcibly load the
+    `r8125` ethernet driver ([#2](https://github.com/milas/rock5-talos/issues/2))~~
+  * Increase minimum installer size to account for the BSP kernel
+    being ~1GB ([#4](https://github.com/milas/rock5-talos/issues/4))
+  * No-op `SystemInfoController` (no SMBIOS support)
+
+# Resources
+* [milas/rock5-toolchain](https://github.com/milas/rock5-toolchain)
+* [radxa/kernel](https://github.com/radxa/kernel)
+* [siderolabs/talos](https://github.com/siderolabs/talos/)
+
+# License
 
 <a href="https://github.com/talos-systems/talos/blob/master/LICENSE">
   <img alt="GitHub" src="https://img.shields.io/github/license/talos-systems/talos?style=flat-square">
