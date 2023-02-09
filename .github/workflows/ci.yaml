@@ -2,7 +2,7 @@ name: Docker Images
 
 on:
   push:
-    branches: [ 'sbc-rock5b' ]
+    branches: [ 'sbc-rock5b', 'sbc-rock5b-*' ]
     tags:
       - "v*"
 
