@@ -1,18 +1,10 @@
 <!-- markdownlint-disable MD041 -->
 
-<p align="center">
-  <h1 align="center">Talos Linux</h1>
-  <p align="center">A modern OS for Kubernetes.</p>
-  <p align="center">
-    <a href="https://github.com/milas/rock5b-talos/releases/latest">
-      <img alt="Release" src="https://img.shields.io/github/release/milas/rock5b-talos.svg?logo=github&logoColor=white&style=flat-square">
-    </a>
-  </p>
-</p>
-
 ---
 
-### 🍴 This is a _fork_ of [siderolabs/talos](https://github.com/siderolabs/talos/) to support the Radxa Rock 5B 🍴
+<h1 align="center">🍴 Fork of <a href="https://github.com/siderolabs/talos/">siderolabs/talos</a> to support the Radxa Rock 5B 🍴</h1>
+
+---
 
 # Why does this exist?
 Currently, the Radxa Rock 5B, like all other Rockchip RK3588-based boards, requires a BSP kernel.
