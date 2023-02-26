@@ -53,6 +53,7 @@ jobs:
           PLATFORM: linux/arm64
           PROGRESS: plain
 
+  # TODO(milas): refactor to split release from eMMC image & use matrix strategy
   talos-emmc-image:
     runs-on: ubuntu-22.04
     needs: talos-installer-image
@@ -84,8 +85,9 @@ jobs:
           mkdir -p _out/
           make sbc-rock_5b
         env:
-          IMAGE_NAME: rock5b-talos
+          IMAGE_NAME: rock5-talos
           IMAGE_TAG: ${{ github.ref_name }}
+          BOARD: rock-5b
 
       - name: Release
         uses: softprops/action-gh-release@v1
