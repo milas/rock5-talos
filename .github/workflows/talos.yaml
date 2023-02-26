@@ -86,7 +86,7 @@ jobs:
           make sbc-rock_5b
         env:
           IMAGE_NAME: rock5-talos
-          IMAGE_TAG: ${{ github.ref_name }}
+          IMAGE_TAG: ${{ github.ref_name }}-rock-5b
           BOARD: rock-5b
 
       - name: Release
