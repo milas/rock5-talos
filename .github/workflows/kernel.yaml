@@ -6,7 +6,7 @@ on:
     branches: ['release-1.4']
     paths:
       - docker-bake.hcl
-      - hack/boards/defconfig
+      - hack/boards/defconfig/**
       - .github/workflows/kernel.yaml
   schedule:
     - cron: '15 18 * * 2' # 18:15 UTC on Tuesday
