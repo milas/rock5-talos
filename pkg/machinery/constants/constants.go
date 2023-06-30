@@ -13,7 +13,7 @@ import (
 
 const (
 	// DefaultKernelVersion is the default Linux kernel version.
-	DefaultKernelVersion = "6.1.30-talos"
+	DefaultKernelVersion = "6.1.35-talos"
 
 	// DefaultKernelModulesPath is the default path to the kernel modules.
 	DefaultKernelModulesPath = "/lib/modules" + "/" + DefaultKernelVersion
@@ -307,7 +307,7 @@ const (
 
 	// DefaultKubernetesVersion is the default target version of the control plane.
 	// renovate: datasource=github-releases depName=kubernetes/kubernetes
-	DefaultKubernetesVersion = "1.27.2"
+	DefaultKubernetesVersion = "1.27.3"
 
 	// DefaultControlPlanePort is the default port to use for the control plane.
 	DefaultControlPlanePort = 6443
@@ -774,7 +774,7 @@ const (
 	DBusClientSocketPath = "/run/dbus/system_bus_socket"
 
 	// GoVersion is the version of Go compiler this release was built with.
-	GoVersion = "go1.20.4"
+	GoVersion = "go1.20.5"
 
 	// KubernetesTalosAPIServiceName is the name of the Kubernetes service to access Talos API.
 	KubernetesTalosAPIServiceName = "talos"
@@ -838,6 +838,9 @@ const (
 
 	// PlatformMetal is the name of the metal platform.
 	PlatformMetal = "metal"
+
+	// MetaValuesEnvVar is the name of the environment variable to store encoded meta values for the disk image (installer).
+	MetaValuesEnvVar = "INSTALLER_META_BASE64"
 )
 
 // See https://linux.die.net/man/3/klogctl
