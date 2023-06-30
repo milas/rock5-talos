@@ -757,7 +757,7 @@ FROM milas/rock5-u-boot:latest-rock-5a-radxa AS u-boot-rock-5a
 #FROM milas/rock5-u-boot:latest-rock-5b-radxa AS u-boot-rock-5b
 FROM scratch AS u-boot-rock-5b
 
-ADD https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-g3caf61a44c2-debug.img /spi/spi_image.img
+ADD https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-gbf47e81-20230607-debug.img /spi/spi_image.img
 
 FROM scratch AS install-artifacts-arm64
 #COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
