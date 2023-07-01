@@ -88,7 +88,10 @@ const (
 	// BoardNanoPiR4S is the name of the Friendlyelec Nano Pi R4S.
 	BoardNanoPiR4S = "nanopi_r4s"
 
-	// BoardRockpi5 is the name of the Radxa Rock pi 4 revisions A and B.
+	// BoardRock5a is the name of the Radxa Rock 5A.
+	BoardRock5a = "rock_5a"
+
+	// BoardRock5b is the name of the Radxa Rock 5B.
 	BoardRock5b = "rock_5b"
 
 	// KernelParamHostname is the kernel parameter name for specifying the
