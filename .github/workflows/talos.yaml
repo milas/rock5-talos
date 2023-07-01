@@ -53,16 +53,19 @@ jobs:
           PLATFORM: linux/arm64
           PROGRESS: plain
 
-  # TODO(milas): refactor to split release from eMMC image & use matrix strategy
   talos-emmc-image:
     runs-on: ubuntu-22.04
     needs: talos-installer-image
 
-    if: contains(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
 
     permissions:
-      contents: write
+      contents: read
       packages: write
+
+    strategy:
+      matrix:
+        board: [rock-5a, rock-5b]
 
     steps:
       - name: Set up Docker Buildx
@@ -82,16 +85,37 @@ jobs:
 
       - name: Build Flashable Image for Rock 5B
         run: |
+          BOARD=${{ matrix.board }}
+          BOARD="${BOARD/-/_}"
           mkdir -p _out/
-          make sbc-rock_5b
+          make "sbc-${BOARD}"
         env:
           IMAGE_NAME: rock5-talos
-          IMAGE_TAG: ${{ github.ref_name }}-rock-5b
-          ROCK5_BOARD: rock-5b
+          IMAGE_TAG: ${{ github.ref_name }}-${{ matrix.board }}
+          ROCK5_BOARD: ${{ matrix.board }}
 
-      - name: Release
+      - uses: actions/upload-artifact@v3
+        with:
+          name: image-${{ matrix.board }}
+          path: _out/*.img.xz
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-22.04
+    needs: talos-emmc-image
+
+    permissions:
+      contents: write
+      packages: none
+
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/download-artifact@v3
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: true
-          files: _out/metal-rock_5b-arm64.img.xz
+          files: 'image-*/*.img.xz'
           generate_release_notes: true
