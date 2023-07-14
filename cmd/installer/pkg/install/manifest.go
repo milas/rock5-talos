@@ -152,6 +152,20 @@ func NewManifest(label string, sequence runtime.Sequence, bootPartitionFound boo
 					Source: filepath.Join(
 						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
 						"rockchip",
+						"rk3588s-rock-5a.dtb",
+					),
+					Destination: filepath.Join(
+						constants.BootMountPoint,
+						label,
+						"dtbs",
+						"rockchip",
+						"rk3588s-rock-5a.dtb",
+					),
+				},
+				{
+					Source: filepath.Join(
+						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+						"rockchip",
 						"overlay",
 						"rk3588-uart7-m2.dtbo",
 					),
