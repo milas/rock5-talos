@@ -1,6 +1,14 @@
 name: Talos Images
 
 on:
+  workflow_dispatch:
+    inputs:
+      build_emmc_image:
+        description: 'Build flashable eMMC image'
+        required: true
+        default: false
+        type: boolean
+
   push:
     branches: [ 'main', 'release-*' ]
     tags:
@@ -57,7 +65,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: talos-installer-image
 
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || inputs.build_emmc_image
 
     permissions:
       contents: read
