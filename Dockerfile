@@ -88,6 +88,12 @@ FROM scratch AS rock5-extlinux
 ARG ROCK5_BOARD
 COPY hack/boards/${ROCK5_BOARD}/extlinux.conf /extlinux.conf
 
+FROM scratch AS git-libmali
+ADD https://github.com/JeffyCN/mirrors.git#libmali /
+
+FROM scratch AS libmali-firmware
+COPY --link --from=git-libmali /firmware/g610/mali_csffw.bin /
+
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
 
@@ -688,10 +694,11 @@ COPY --from=squashfs-arm64 /rootfs.sqsh .
 COPY --from=init-build-arm64 /init .
 # copying over firmware binary blobs to initramfs
 COPY --from=pkg-linux-firmware /lib/firmware/rtl_nic ./lib/firmware/rtl_nic
-COPY --from=pkg-linux-firmware /lib/firmware/nvidia/tegra210 ./lib/firmware/nvidia/tegra210
+#COPY --from=pkg-linux-firmware /lib/firmware/nvidia/tegra210 ./lib/firmware/nvidia/tegra210
 # the intel ice pkg file from linux-firmware has the version appended to it, but kernel only looks up ice.pkg
 # ref: https://github.com/torvalds/linux/blob/v5.15/Documentation/networking/device_drivers/ethernet/intel/ice.rst#dynamic-device-personalization
-COPY --from=pkg-linux-firmware /lib/firmware/intel/ice/ddp/ice-*.pkg ./lib/firmware/intel/ice/ddp/ice.pkg
+#COPY --from=pkg-linux-firmware /lib/firmware/intel/ice/ddp/ice-*.pkg ./lib/firmware/intel/ice/ddp/ice.pkg
+COPY --link --from=libmali-firmware --chmod=0644 / ./lib/firmware/
 RUN find . -print0 \
     | xargs -0r touch --no-dereference --date="@${SOURCE_DATE_EPOCH}"
 RUN set -o pipefail \
