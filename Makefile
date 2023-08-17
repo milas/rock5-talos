@@ -17,9 +17,9 @@ DOCKER_LOGIN_ENABLED ?= true
 NAME = Talos
 
 ARTIFACTS := _out
-TOOLS ?= ghcr.io/siderolabs/tools:v1.4.0-3-gfac34e5
-PKGS ?= v1.4.1-14-ge911ac5
-EXTRAS ?= v1.4.0-2-gb2aba9d
+TOOLS ?= ghcr.io/siderolabs/tools:v1.4.0-5-g6889ef6
+PKGS ?= v1.4.1-19-g13103d6
+EXTRAS ?= v1.4.0-4-g9b41398
 # renovate: datasource=github-tags depName=golang/go
 GO_VERSION ?= 1.20
 # renovate: datasource=go depName=golang.org/x/tools
@@ -54,7 +54,7 @@ INTEGRATION_TEST_DEFAULT_TARGET := integration-test-$(OPERATING_SYSTEM)
 MODULE_SIG_VERIFY_DEFAULT_TARGET := module-sig-verify-$(OPERATING_SYSTEM)
 INTEGRATION_TEST_PROVISION_DEFAULT_TARGET := integration-test-provision-$(OPERATING_SYSTEM)
 # renovate: datasource=github-releases depName=kubernetes/kubernetes
-KUBECTL_VERSION ?= v1.27.3
+KUBECTL_VERSION ?= v1.27.4
 # renovate: datasource=github-releases depName=kastenhq/kubestr
 KUBESTR_VERSION ?= v0.4.37
 # renovate: datasource=github-releases depName=helm/helm
