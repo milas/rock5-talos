@@ -84,6 +84,12 @@ FROM scratch AS rock5-extlinux
 ARG ROCK5_BOARD
 COPY hack/boards/${ROCK5_BOARD}/extlinux.conf /extlinux.conf
 
+FROM scratch AS git-libmali
+ADD https://github.com/JeffyCN/mirrors.git#libmali /
+
+FROM scratch AS libmali-firmware
+COPY --link --from=git-libmali /firmware/g610/mali_csffw.bin /
+
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
 
@@ -540,7 +546,8 @@ COPY --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
 COPY --from=pkg-kernel-arm64 /lib/modules /rootfs/lib/modules
 COPY --from=machined-build-arm64 /machined /rootfs/sbin/init
-COPY --from=rock5-kernel /lib/modules /rootfs/lib/modules
+COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
+COPY --link --from=libmali-firmware / /rootfs/lib/firmware/
 # the orderly_poweroff call by the kernel will call '/sbin/poweroff'
 RUN ln /rootfs/sbin/init /rootfs/sbin/poweroff
 RUN chmod +x /rootfs/sbin/poweroff
