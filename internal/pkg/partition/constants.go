@@ -34,6 +34,10 @@ const (
 	EFISize      = 100 * MiB
 	BIOSGrubSize = 1 * MiB
 	BootSize     = 4000 * MiB
+	// BootOffset is the expected start of the /boot partition for U-Boot/extlinux on Rockchip devices.
+	//
+	// HACK: this is for Rock 5 (RK3588) device support.
+	BootOffset = 32768 * 512
 	// EFIUKISize is the size of the EFI partition when UKI is enabled.
 	// With UKI all assets are stored in the EFI partition.
 	// This is the size of the old EFISize + BIOSGrubSize + BootSize.

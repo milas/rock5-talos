@@ -17,6 +17,7 @@ type Options struct {
 	PartitionLabel     string
 	PartitionType      Type
 	Size               uint64
+	Offset             uint64
 	LegacyBIOSBootable bool
 }
 
@@ -48,6 +49,10 @@ func Partition(pt *gpt.GPT, pos int, device string, partitionOpts Options, print
 
 	if partitionOpts.Size == 0 {
 		opts = append(opts, gpt.WithMaximumSize(true))
+	}
+
+	if partitionOpts.Offset != 0 {
+		opts = append(opts, gpt.WithOffset(partitionOpts.Offset))
 	}
 
 	if partitionOpts.LegacyBIOSBootable {
@@ -99,6 +104,7 @@ func systemPartitionsPartitonOptions(label string, uki bool) *Options {
 		return &Options{
 			PartitionType: LinuxFilesystemData,
 			Size:          BootSize,
+			Offset: BootOffset,
 		}
 	case constants.MetaPartitionLabel:
 		return &Options{

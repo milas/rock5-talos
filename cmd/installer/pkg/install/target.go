@@ -214,17 +214,13 @@ func (t *Target) partition(pt *gpt.GPT, pos int, printf func(string, ...any)) (e
 
 		return nil
 	}
-	
-	if t.Offset != 0 {
-		opts = append(opts, gpt.WithOffset(t.Offset))
-	}
-
 
 	partitionName, err := partition.Partition(pt, pos, t.Device, partition.Options{
 		PartitionLabel:     t.Label,
 		PartitionType:      t.PartitionType,
 		Size:               t.Size,
 		LegacyBIOSBootable: t.LegacyBIOSBootable,
+		Offset: t.Offset,
 	}, printf)
 	if err != nil {
 		return err
