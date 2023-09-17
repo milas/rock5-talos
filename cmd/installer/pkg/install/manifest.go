@@ -115,71 +115,10 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 		manifest.Targets[opts.Disk] = []*Target{}
 	}
 
-	var targets []*Target
-	var bootTarget *Target
-
-	if opts.Bootloader {
-		bootTarget = BootTarget(opts.Disk, &Target{
-			PreserveContents: bootPartitionFound,
-			Assets: []*Asset{
-				{
-					Source:      fmt.Sprintf(constants.KernelAssetPath, opts.Arch),
-					Destination: filepath.Join(constants.BootMountPoint, label, constants.KernelAsset),
-				},
-				{
-					Source:      fmt.Sprintf(constants.InitramfsAssetPath, opts.Arch),
-					Destination: filepath.Join(constants.BootMountPoint, label, constants.InitramfsAsset),
-				},
-				{
-					Source:      fmt.Sprintf(constants.ExtlinuxAssetPath, opts.Arch),
-					Destination: filepath.Join(constants.BootMountPoint, constants.ExtlinuxAsset),
-				},
-				{
-					Source: filepath.Join(
-						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-						"rockchip",
-						"rk3588-rock-5b.dtb",
-					),
-					Destination: filepath.Join(
-						constants.BootMountPoint,
-						label,
-						"dtbs",
-						"rockchip",
-						"rk3588-rock-5b.dtb",
-					),
-				},
-				{
-					Source: filepath.Join(
-						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-						"rockchip",
-						"rk3588s-rock-5a.dtb",
-					),
-					Destination: filepath.Join(
-						constants.BootMountPoint,
-						label,
-						"dtbs",
-						"rockchip",
-						"rk3588s-rock-5a.dtb",
-					),
-				},
-				{
-					Source: filepath.Join(
-						fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-						"rockchip",
-						"overlay",
-						"rk3588-uart7-m2.dtbo",
-					),
-					Destination: filepath.Join(
-						constants.BootMountPoint,
-						label,
-						"dtbs",
-						"rockchip",
-						"overlay",
-						"rk3588-uart7-m2.dtbo",
-					),
-				},
-			},
-		})
+	targets := []*Target{
+		BootTarget(opts.Disk, &Target{
+			PreserveContents: bootLoaderPresent,
+		}),
 	}
 
 	targets = append(targets,

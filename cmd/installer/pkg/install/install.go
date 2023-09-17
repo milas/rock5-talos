@@ -197,8 +197,6 @@ func (i *Installer) Install(ctx context.Context, mode Mode) (err error) {
 	mountpoints := mount.NewMountPoints()
 
 	for _, label := range []string{constants.BootPartitionLabel} {
-
-	for _, label := range bootLabels {
 		err = func() error {
 			var device string
 			// searching targets for the device to be used
@@ -258,6 +256,15 @@ func (i *Installer) Install(ctx context.Context, mode Mode) (err error) {
 	if err = i.bootloader.Install(bootloaderoptions.InstallOptions{
 		BootDisk:   i.options.Disk,
 		Arch:       i.options.Arch,
+		Cmdline:    i.cmdline.String(),
+		Version:    i.options.Version,
+		ImageMode:  mode.IsImage(),
+		BootAssets: i.options.BootAssets,
+		Printf:     i.options.Printf,
+	}); err != nil {
+		return err
+	}
+
 	if i.options.Board != constants.BoardNone {
 		var b runtime.Board
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -188,10 +189,32 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 		Printf: printf,
 	}
 
-	if opts.Board == "" {
-		opts.Board = constants.BoardNone
+	if !strings.HasPrefix(opts.Board, "rock") {
+		panic("rock5: imager only works for rock5 boards")
 	}
 
+	// HACK: this is not great, but upstream Talos is redoing how boards
+	// are handled, so not spending time here right now
+	if opts.Board == constants.BoardRock5a {
+		opts.BootAssets.DtbPath = filepath.Join(
+			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+			"rockchip",
+			"rk3588s-rock-5a.dtb",
+		)
+	} else if opts.Board == constants.BoardRock5b {
+		opts.BootAssets.DtbPath = filepath.Join(
+			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+			"rockchip",
+			"rk3588-rock-5b.dtb",
+		)
+		opts.BootAssets.DtoPaths = append(opts.BootAssets.DtoPaths, filepath.Join(
+			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
+			"rockchip",
+			"overlay",
+			"rk3588-uart7-m2.dtbo",
+		))
+	}
+	
 	installer, err := install.NewInstaller(ctx, cmdline, install.ModeImage, opts)
 	if err != nil {
 		return fmt.Errorf("failed to create installer: %w", err)
