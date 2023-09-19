@@ -7,6 +7,7 @@ package install
 import (
 	"context"
 	"fmt"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader/extlinux"
 	"log"
 	"os"
 
@@ -91,6 +92,11 @@ func Install(ctx context.Context, p runtime.Platform, mode Mode, opts *Options) 
 			return err
 		}
 
+		if dt, ok := b.(board.DeviceTree); ok {
+			opts.BootAssets.DtbPath = dt.DeviceTreeBlobPath()
+			opts.BootAssets.DtoPaths = dt.DeviceTreeOverlaysPath()
+		}
+
 		cmdline.Append(constants.KernelParamBoard, b.Name())
 
 		cmdline.SetAll(b.KernelArgs().Strings())
@@ -151,13 +157,8 @@ func NewInstaller(ctx context.Context, cmdline *procfs.Cmdline, mode Mode, opts 
 
 	bootLoaderPresent := i.bootloader != nil
 	if !bootLoaderPresent {
-		if mode.IsImage() {
-			// on image creation, use the bootloader based on options
-			i.bootloader = bootloader.New(opts.ImageSecureboot)
-		} else {
-			// on install/upgrade perform automatic detection
-			i.bootloader = bootloader.NewAuto()
-		}
+		// HACK(rock5): use extlinux
+		i.bootloader = extlinux.NewConfig()
 	}
 
 	i.manifest, err = NewManifest(mode, i.bootloader.UEFIBoot(), bootLoaderPresent, i.options)

@@ -171,6 +171,11 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 
 	cmdline := procfs.NewCmdline(i.cmdline)
 
+	dtoPaths := make([]string, len(i.prof.Input.DtoPaths))
+	for dtoIndex := range i.prof.Input.DtoPaths {
+		dtoPaths[dtoIndex] = i.prof.Input.DtoPaths[dtoIndex].Path
+	}
+
 	opts := &install.Options{
 		Disk:       loDevice,
 		Platform:   i.prof.Platform,
@@ -185,34 +190,14 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 			InitramfsPath: i.initramfsPath,
 			UKIPath:       i.ukiPath,
 			SDBootPath:    i.sdBootPath,
+			DtbPath:       i.prof.Input.DtbPath.Path,
+			DtoPaths:      dtoPaths,
 		},
 		Printf: printf,
 	}
 
 	if !strings.HasPrefix(opts.Board, "rock") {
-		panic("rock5: imager only works for rock5 boards")
-	}
-
-	// HACK: this is not great, but upstream Talos is redoing how boards
-	// are handled, so not spending time here right now
-	if opts.Board == constants.BoardRock5a {
-		opts.BootAssets.DtbPath = filepath.Join(
-			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-			"rockchip",
-			"rk3588s-rock-5a.dtb",
-		)
-	} else if opts.Board == constants.BoardRock5b {
-		opts.BootAssets.DtbPath = filepath.Join(
-			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-			"rockchip",
-			"rk3588-rock-5b.dtb",
-		)
-		opts.BootAssets.DtoPaths = append(opts.BootAssets.DtoPaths, filepath.Join(
-			fmt.Sprintf(constants.DtbsAssetPath, opts.Arch),
-			"rockchip",
-			"overlay",
-			"rk3588-uart7-m2.dtbo",
-		))
+		panic("rock5: imager only works for rock5 rock5")
 	}
 	
 	installer, err := install.NewInstaller(ctx, cmdline, install.ModeImage, opts)

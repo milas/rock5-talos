@@ -36,6 +36,10 @@ type Input struct {
 	SecureBoot *SecureBootAssets `yaml:"secureboot,omitempty"`
 	// SystemExtensions is a list of system extensions to install.
 	SystemExtensions []ContainerAsset `yaml:"systemExtensions,omitempty"`
+	// DtbPath is the device tree file.
+	DtbPath          FileAsset `yaml:"dtbPath,omitempty"`
+	// DtoPaths are device tree overlays (optional).
+	DtoPaths         []FileAsset `yaml:"dtoPaths,omitempty"`
 }
 
 // FileAsset describes a file asset.

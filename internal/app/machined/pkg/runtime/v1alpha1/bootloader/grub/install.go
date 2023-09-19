@@ -33,27 +33,11 @@ func (c *Config) Install(options options.InstallOptions) error {
 
 	options.BootAssets.FillDefaults(options.Arch)
 
-	instructions := []utils.CopyInstruction{
+	if err := utils.CopyFiles(
+		options.Printf,
 		utils.SourceDestination(options.BootAssets.KernelPath, filepath.Join(constants.BootMountPoint, string(c.Default), constants.KernelAsset)),
 		utils.SourceDestination(options.BootAssets.InitramfsPath, filepath.Join(constants.BootMountPoint, string(c.Default), constants.InitramfsAsset)),
-		utils.SourceDestination(options.BootAssets.ExtlinuxPath, filepath.Join(constants.BootMountPoint, constants.ExtlinuxAsset)),
-	}
-
-	if options.BootAssets.DtbPath != "" {
-		utils.SourceDestination(
-			options.BootAssets.DtbPath,
-			filepath.Join(constants.BootMountPoint, string(c.Default), "dtbs", "rockchip", filepath.Base(options.BootAssets.DtbPath)),
-		)
-	}
-
-	for _, dtoPath := range options.BootAssets.DtoPaths {
-		instructions = append(instructions, utils.SourceDestination(
-			dtoPath,
-			filepath.Join(constants.BootMountPoint, string(c.Default), "dtbs", "rockchip", "overlay", filepath.Base(dtoPath))),
-		)
-	}
-
-	if err := utils.CopyFiles(options.Printf, instructions...); err != nil {
+	); err != nil {
 		return err
 	}
 

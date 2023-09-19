@@ -40,7 +40,6 @@ type BootAssets struct {
 	UKIPath    string
 	SDBootPath string
 
-	ExtlinuxPath string
 	DtbPath      string
 	DtoPaths     []string
 }
@@ -61,9 +60,5 @@ func (assets *BootAssets) FillDefaults(arch string) {
 
 	if assets.SDBootPath == "" {
 		assets.SDBootPath = fmt.Sprintf(constants.SDBootAssetPath, arch)
-	}
-
-	if assets.ExtlinuxPath == "" {
-		assets.ExtlinuxPath = fmt.Sprintf(constants.ExtlinuxAssetPath, arch)
 	}
 }

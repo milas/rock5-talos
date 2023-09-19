@@ -1,16 +1,15 @@
-ifndef ROCK5_BOARD
-$(error ROCK5_BOARD is required)
-endif
-
-REGISTRY ?= ghcr.io
-USERNAME ?= siderolabs
+REGISTRY ?= docker.io
+USERNAME ?= milas
 SHA ?= $(shell git describe --match=none --always --abbrev=8 --dirty)
 TAG ?= $(shell git describe --tag --always --dirty --match v[0-9]\*)
 ABBREV_TAG ?= $(shell git describe --tag --always --match v[0-9]\* --abbrev=0 )
-TAG_SUFFIX ?= -$(ROCK5_BOARD)
 SOURCE_DATE_EPOCH ?= $(shell git log -1 --pretty=%ct)
 IMAGE_REGISTRY ?= $(REGISTRY)
+ifndef ROCK5_BOARD
 IMAGE_TAG ?= $(TAG)$(TAG_SUFFIX)
+else
+IMAGE_TAG ?= $(TAG)-$(ROCK5_BOARD)
+endif
 BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 REGISTRY_AND_USERNAME := $(IMAGE_REGISTRY)/$(USERNAME)
 DOCKER_LOGIN_ENABLED ?= true
@@ -114,7 +113,7 @@ COMMON_ARGS += --platform=$(PLATFORM)
 COMMON_ARGS += --push=$(PUSH)
 COMMON_ARGS += --provenance=$(PROVENANCE)
 ifneq ($(ROCK5_UBOOT), '')
-COMMON_ARGS += --build-context=u-boot-$(ROCK5_BOARD)=$(ROCK5_UBOOT)
+COMMON_ARGS += --build-context=$(ROCK5_BOARD)-u-boot=$(ROCK5_UBOOT)
 endif
 ifneq ($(ROCK5_KERNEL), '')
 COMMON_ARGS += --build-context=rock5-kernel=$(ROCK5_KERNEL)
@@ -275,7 +274,8 @@ installer: ## Builds the container image for the installer and outputs it to the
 
 .PHONY: imager
 imager: ## Builds the container image for the imager and outputs it to the registry.
-	@$(MAKE) registry-$@
+	@INSTALLER_ARCH=targetarch \
+		$(MAKE) registry-$@
 
 .PHONY: talos
 talos: ## Builds the Talos container image and outputs it to the registry.
@@ -325,7 +325,7 @@ images: image-aws image-azure image-digital-ocean image-exoscale image-gcp image
 
 sbc-%: ## Builds the specified SBC image. Valid options are rpi_generic, rock64, bananapi_m64, libretech_all_h3_cc_h5, rockpi_4, rockpi_4c, pine64, jetson_nano and nanopi_r4s (e.g. sbc-rpi_generic)
 	@docker pull --platform=linux/arm64 $(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-imager}:$(IMAGE_TAG)
-	@docker run --platform=linux/arm64 --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-imager}:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
+	docker run --platform=linux/arm64 --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$${IMAGE_NAME:-imager}:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
 
 sbcs: sbc-rpi_generic sbc-rock64 sbc-bananapi_m64 sbc-libretech_all_h3_cc_h5 sbc-rockpi_4 sbc-rockpi_4c sbc-pine64 sbc-jetson_nano sbc-nanopi_r4s ## Builds all known SBC images (Raspberry Pi 4, Rock64, Banana Pi M64, Radxa ROCK Pi 4, Radxa ROCK Pi 4c, Pine64, Libre Computer Board ALL-H3-CC, Jetson Nano and Nano Pi R4S).
 

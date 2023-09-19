@@ -70,6 +70,11 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 			return nil, err
 		}
 
+		if dt, ok := b.(board.DeviceTree); ok {
+			opts.BootAssets.DtbPath = dt.DeviceTreeBlobPath()
+			opts.BootAssets.DtoPaths = dt.DeviceTreeOverlaysPath()
+		}
+
 		manifest.PartitionOptions = b.PartitionOptions()
 	}
 

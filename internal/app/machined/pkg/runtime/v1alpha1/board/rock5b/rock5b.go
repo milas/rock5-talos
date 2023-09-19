@@ -5,24 +5,24 @@
 package rock5b
 
 import (
+	"fmt"
+	"github.com/siderolabs/go-procfs/procfs"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rk3588"
+	"golang.org/x/sys/unix"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/siderolabs/go-procfs/procfs"
-	"golang.org/x/sys/unix"
-
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
-	"github.com/siderolabs/talos/pkg/copy"
 	"github.com/siderolabs/talos/pkg/machinery/constants"
 )
 
 const (
 	sectorSize        = 512
-	ubootImage        = "/usr/install/arm64/u-boot/rock_5b/u-boot.img"
 	ubootOffset int64 = sectorSize * 0x40
-	dtb               = "/dtb/rockchip/rk3588-rock-5b.dtb"
 )
+
+var ubootImage = fmt.Sprintf("/usr/install/arm64/u-boot/%s/u-boot.img", constants.BoardRock5b)
 
 // Rock5b represents the Radxa Rock 5B board.
 //
@@ -69,27 +69,37 @@ func (r *Rock5b) Install(disk string) (err error) {
 		return err
 	}
 
-	src := "/usr/install/arm64" + dtb
-	dst := "/boot/EFI" + dtb
-
-	err = os.MkdirAll(filepath.Dir(dst), 0o600)
-	if err != nil {
-		return err
-	}
-
-	return copy.File(src, dst)
+	return nil
 }
 
 // KernelArgs implements the runtime.Board.
+//
+// See https://github.com/radxa/debos-radxa/blob/6f5aaf4e62796b31082d62ca3c606259cf624667/rootfs/fs-overlay/rk3588/overlays/boot/config-rock-5b.txt.
 func (r *Rock5b) KernelArgs() procfs.Parameters {
 	return []*procfs.Parameter{
-		procfs.NewParameter("console").Append("tty0").Append("ttyS2,1500000n8"),
+		procfs.NewParameter("earlycon").Append("uart8250,mmio32,0xfeb50000"),
+		procfs.NewParameter("console").Append("ttyFIQ0").Append("tty1"),
 		procfs.NewParameter("sysctl.kernel.kexec_load_disabled").Append("1"),
 		procfs.NewParameter(constants.KernelParamDashboardDisabled).Append("1"),
+		procfs.NewParameter("modprobe.blacklist").Append("pgdrv"),
+		procfs.NewParameter("irqchip.gicv3_pseudo_nmi").Append("0"),
+		procfs.NewParameter("switolb").Append("1"),
+		procfs.NewParameter("coherent_pool").Append("2M"),
+		procfs.NewParameter("cgroup_enable").Append("cpuset").Append("memory"),
+		procfs.NewParameter("cgroup_memory").Append("1"),
+		procfs.NewParameter("swapaccount").Append("1"),
 	}
 }
 
 // PartitionOptions implements the runtime.Board.
 func (r *Rock5b) PartitionOptions() *runtime.PartitionOptions {
 	return nil
+}
+
+func (r *Rock5b) DeviceTreeBlobPath() string {
+	return filepath.Join(fmt.Sprintf(constants.DtbsAssetPath, "arm64"), "rockchip", "rk3588-rock-5b.dtb")
+}
+
+func (r *Rock5b) DeviceTreeOverlaysPath() []string {
+	return rk3588.DeviceTreeOverlays
 }

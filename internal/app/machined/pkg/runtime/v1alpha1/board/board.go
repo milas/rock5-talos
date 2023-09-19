@@ -82,3 +82,9 @@ func newBoard(board string) (b runtime.Board, err error) {
 
 	return b, nil
 }
+
+type DeviceTree interface {
+	DeviceTreeBlobPath() string
+
+	DeviceTreeOverlaysPath() []string
+}

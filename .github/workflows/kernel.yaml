@@ -6,7 +6,7 @@ on:
     branches: ['release-1.4']
     paths:
       - docker-bake.hcl
-      - hack/boards/defconfig/**
+      - hack/rock5/defconfig/**
       - .github/workflows/kernel.yaml
   schedule:
     - cron: '15 18 * * 2' # 18:15 UTC on Tuesday
@@ -32,7 +32,7 @@ jobs:
           username: milas
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      # we need the local repo contents to get files from `./hack/boards`
+      # we need the local repo contents to get files from `./hack/rock5`
       - name: Checkout
         uses: actions/checkout@v3
 

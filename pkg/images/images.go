@@ -19,7 +19,7 @@ var (
 
 	// DefaultInstallerImageName is the default container image name for
 	// the installer.
-	DefaultInstallerImageName = Username + "/installer"
+	DefaultInstallerImageName = Username + "/rock5-talos"
 
 	// DefaultInstallerImageRepository is the default container repository for
 	// the installer.

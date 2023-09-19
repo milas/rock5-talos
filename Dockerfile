@@ -6,7 +6,6 @@ ARG TOOLS
 ARG PKGS
 ARG EXTRAS
 ARG INSTALLER_ARCH
-ARG ROCK5_BOARD
 
 # Resolve package images using ${PKGS} to be used later in COPY --from=.
 
@@ -83,10 +82,6 @@ FROM --platform=amd64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-amd64
 FROM --platform=arm64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-arm64
 
 FROM docker.io/milas/rock5-talos-kernel AS rock5-kernel
-
-FROM scratch AS rock5-extlinux
-ARG ROCK5_BOARD
-COPY hack/boards/${ROCK5_BOARD}/extlinux.conf /extlinux.conf
 
 FROM scratch AS git-libmali
 ADD https://github.com/JeffyCN/mirrors.git#libmali /
@@ -759,27 +754,22 @@ COPY --from=pkg-kernel-amd64 /boot/vmlinuz /usr/install/amd64/vmlinuz
 COPY --from=pkg-kernel-amd64 /dtb /usr/install/amd64/dtb
 COPY --from=initramfs-archive-amd64 /initramfs.xz /usr/install/amd64/initramfs.xz
 
-FROM milas/rock5-u-boot:latest-rock-5a-radxa AS u-boot-rock-5a
-
-#FROM milas/rock5-u-boot:latest-rock-5b-radxa AS u-boot-rock-5b
-FROM scratch AS u-boot-rock-5b
-
-ADD https://dl.radxa.com/rock5/sw/images/loader/rock-5b/debug/rock-5b-spi-image-gbf47e81-20230607-debug.img /spi/spi_image.img
+FROM milas/rock5-u-boot:latest-rock-5a-radxa AS rock-5a-u-boot
+FROM milas/rock5-u-boot:latest-rock-5b-radxa AS rock-5b-u-boot
 
 FROM scratch AS install-artifacts-arm64
 #COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
 #COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
-COPY --from=u-boot-rock-5a --link /spi/spi_image.img /usr/install/arm64/u-boot/rock_5a/u-boot.img
-COPY --from=u-boot-rock-5b --link /spi/spi_image.img /usr/install/arm64/u-boot/rock_5b/u-boot.img
-COPY --from=rock5-kernel --link /vmlinuz /usr/install/arm64/
-COPY --from=rock5-kernel --link /dtb /usr/install/arm64/dtb
-COPY --from=rock5-extlinux --link / /usr/install/arm64/extlinux
+COPY --link --from=rock-5a-u-boot /spi/spi_image.img /usr/install/arm64/u-boot/rock_5a/u-boot.img
+COPY --link --from=rock-5b-u-boot /spi/spi_image.img /usr/install/arm64/u-boot/rock_5b/u-boot.img
+COPY --link --from=rock5-kernel /vmlinuz /usr/install/arm64/
+COPY --link --from=rock5-kernel /dtb /usr/install/arm64/dtb
 
 COPY --from=initramfs-archive-arm64 /initramfs.xz /usr/install/arm64/initramfs.xz
-COPY --from=pkg-sd-boot-arm64 /linuxaa64.efi.stub /usr/install/arm64/systemd-stub.efi
-COPY --from=pkg-sd-boot-arm64 /systemd-bootaa64.efi /usr/install/arm64/systemd-boot.efi
-COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
-COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
+#COPY --from=pkg-sd-boot-arm64 /linuxaa64.efi.stub /usr/install/arm64/systemd-stub.efi
+#COPY --from=pkg-sd-boot-arm64 /systemd-bootaa64.efi /usr/install/arm64/systemd-boot.efi
+#COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
+#COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
 
 FROM scratch AS install-artifacts-all
 COPY --from=install-artifacts-amd64 / /
@@ -798,7 +788,6 @@ RUN apk add --no-cache --update --no-scripts \
     binutils-x86_64 \
     cpio \
     dosfstools \
-    cpio \
     e2fsprogs \
     efibootmgr \
     kmod \
