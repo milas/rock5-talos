@@ -5,14 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader/options"
-	"github.com/siderolabs/talos/pkg/imager/utils"
-	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader/options"
+	"github.com/siderolabs/talos/pkg/imager/utils"
+	"github.com/siderolabs/talos/pkg/machinery/constants"
 )
 
 // BootLabel represents a boot label, e.g. A or B.
@@ -38,18 +39,18 @@ label Talos
 `
 
 type Config struct {
-	Default BootLabel
+	Default  BootLabel
 	Fallback BootLabel
 	Entry    *Entry
 }
 
 type Entry struct {
-	Kernel string
-	Cmdline string
-	Initrd string
+	Kernel        string
+	Cmdline       string
+	Initrd        string
 	DeviceTreeDir string
-	Fdt string
-	FdtOverlays string
+	Fdt           string
+	FdtOverlays   string
 }
 
 func NewConfig() *Config {

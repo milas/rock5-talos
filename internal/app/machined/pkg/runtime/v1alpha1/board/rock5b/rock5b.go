@@ -6,12 +6,13 @@ package rock5b
 
 import (
 	"fmt"
-	"github.com/siderolabs/go-procfs/procfs"
-	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rk3588"
-	"golang.org/x/sys/unix"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/siderolabs/go-procfs/procfs"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rk3588"
+	"golang.org/x/sys/unix"
 
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
 	"github.com/siderolabs/talos/pkg/machinery/constants"
@@ -28,6 +29,8 @@ var ubootImage = fmt.Sprintf("/usr/install/arm64/u-boot/%s/u-boot.img", constant
 //
 // Reference: https://wiki.radxa.com/Rock5
 type Rock5b struct{}
+
+var _ runtime.DeviceTree = &Rock5b{}
 
 // Name implements the runtime.Board.
 func (r *Rock5b) Name() string {

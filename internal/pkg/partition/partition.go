@@ -104,7 +104,7 @@ func systemPartitionsPartitonOptions(label string, uki bool) *Options {
 		return &Options{
 			PartitionType: LinuxFilesystemData,
 			Size:          BootSize,
-			Offset: BootOffset,
+			Offset:        BootOffset,
 		}
 	case constants.MetaPartitionLabel:
 		return &Options{

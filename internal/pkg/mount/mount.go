@@ -7,6 +7,7 @@ package mount
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -165,6 +166,11 @@ func mountRetry(f RetryFunc, p *Point, isUnmount bool) (err error) {
 
 		return nil
 	})
+
+	var errorSet *retry.ErrorSet
+	if errors.As(err, &errorSet) {
+		return fmt.Errorf("flattened: %s: %w", strings.Replace(errorSet.Error(), "\n", " | ", -1), err)
+	}
 
 	return err
 }

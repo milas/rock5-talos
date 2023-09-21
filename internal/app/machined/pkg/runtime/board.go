@@ -19,3 +19,9 @@ type Board interface {
 	KernelArgs() procfs.Parameters
 	PartitionOptions() *PartitionOptions
 }
+
+type DeviceTree interface {
+	DeviceTreeBlobPath() string
+
+	DeviceTreeOverlaysPath() []string
+}

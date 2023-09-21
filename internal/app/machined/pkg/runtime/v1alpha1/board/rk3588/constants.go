@@ -2,8 +2,9 @@ package rk3588
 
 import (
 	"fmt"
-	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"path/filepath"
+
+	"github.com/siderolabs/talos/pkg/machinery/constants"
 )
 
 var DeviceTreeOverlays = []string{

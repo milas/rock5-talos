@@ -7,9 +7,10 @@ package install
 import (
 	"context"
 	"fmt"
-	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader/extlinux"
 	"log"
 	"os"
+
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/bootloader/extlinux"
 
 	"github.com/siderolabs/go-blockdevice/blockdevice"
 	"github.com/siderolabs/go-procfs/procfs"
@@ -92,7 +93,7 @@ func Install(ctx context.Context, p runtime.Platform, mode Mode, opts *Options) 
 			return err
 		}
 
-		if dt, ok := b.(board.DeviceTree); ok {
+		if dt, ok := b.(runtime.DeviceTree); ok {
 			opts.BootAssets.DtbPath = dt.DeviceTreeBlobPath()
 			opts.BootAssets.DtoPaths = dt.DeviceTreeOverlaysPath()
 		}

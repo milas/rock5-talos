@@ -171,11 +171,6 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 
 	cmdline := procfs.NewCmdline(i.cmdline)
 
-	dtoPaths := make([]string, len(i.prof.Input.DtoPaths))
-	for dtoIndex := range i.prof.Input.DtoPaths {
-		dtoPaths[dtoIndex] = i.prof.Input.DtoPaths[dtoIndex].Path
-	}
-
 	opts := &install.Options{
 		Disk:       loDevice,
 		Platform:   i.prof.Platform,
@@ -190,8 +185,6 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 			InitramfsPath: i.initramfsPath,
 			UKIPath:       i.ukiPath,
 			SDBootPath:    i.sdBootPath,
-			DtbPath:       i.prof.Input.DtbPath.Path,
-			DtoPaths:      dtoPaths,
 		},
 		Printf: printf,
 	}
@@ -199,7 +192,7 @@ func (i *Imager) buildImage(ctx context.Context, path string, printf func(string
 	if !strings.HasPrefix(opts.Board, "rock") {
 		panic("rock5: imager only works for rock5 rock5")
 	}
-	
+
 	installer, err := install.NewInstaller(ctx, cmdline, install.ModeImage, opts)
 	if err != nil {
 		return fmt.Errorf("failed to create installer: %w", err)

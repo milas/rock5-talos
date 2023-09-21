@@ -40,8 +40,8 @@ type BootAssets struct {
 	UKIPath    string
 	SDBootPath string
 
-	DtbPath      string
-	DtoPaths     []string
+	DtbPath  string
+	DtoPaths []string
 }
 
 // FillDefaults fills in default paths to be used when in the context of the installer.

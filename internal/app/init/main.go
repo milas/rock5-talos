@@ -166,7 +166,7 @@ func mountRootFS() error {
 	for _, layer := range layers {
 		dev, err := losetup.Attach(layer.image, 0, true)
 		if err != nil {
-			return err
+			return fmt.Errorf("attach %s: %w", layer.image, err)
 		}
 
 		p := mount.NewMountPoint(dev.Path(), "/"+layer.name, "squashfs", unix.MS_RDONLY|unix.MS_I_VERSION, "", mount.WithPrefix(constants.ExtensionLayers), mount.WithFlags(mount.ReadOnly|mount.Shared))
@@ -176,21 +176,24 @@ func mountRootFS() error {
 	}
 
 	if err := mount.Mount(squashfs); err != nil {
-		return err
+		return fmt.Errorf("mount squashfs: %w", err)
 	}
 
 	overlay := mount.NewMountPoints()
 	overlay.Set(constants.NewRoot, mount.NewMountPoint(strings.Join(overlays, ":"), constants.NewRoot, "", unix.MS_I_VERSION, "", mount.WithFlags(mount.ReadOnly|mount.ReadonlyOverlay|mount.Shared)))
 
 	if err := mount.Mount(overlay); err != nil {
-		return err
+		return fmt.Errorf("mount overlay: %w", err)
 	}
 
 	if err := mount.Unmount(squashfs); err != nil {
-		return err
+		return fmt.Errorf("unmount squashfs: %w", err)
 	}
 
-	return unix.Mount(constants.ExtensionsConfigFile, filepath.Join(constants.NewRoot, constants.ExtensionsRuntimeConfigFile), "", unix.MS_BIND|unix.MS_RDONLY, "")
+	if err := unix.Mount(constants.ExtensionsConfigFile, filepath.Join(constants.NewRoot, constants.ExtensionsRuntimeConfigFile), "", unix.MS_BIND|unix.MS_RDONLY, ""); err != nil {
+		return fmt.Errorf("mount extensions config: %w", err)
+	}
+	return nil
 }
 
 func bindMountFirmware() error {

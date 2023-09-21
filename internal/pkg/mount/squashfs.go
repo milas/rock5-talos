@@ -5,6 +5,7 @@
 package mount
 
 import (
+	"fmt"
 	"github.com/freddierice/go-losetup/v2"
 	"golang.org/x/sys/unix"
 
@@ -17,7 +18,7 @@ func SquashfsMountPoints(prefix string) (mountpoints *Points, err error) {
 
 	dev, err = losetup.Attach("/"+constants.RootfsAsset, 0, true)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("squashfs: attach: %w", err)
 	}
 
 	squashfs := NewMountPoints()

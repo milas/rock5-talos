@@ -220,7 +220,7 @@ func (t *Target) partition(pt *gpt.GPT, pos int, printf func(string, ...any)) (e
 		PartitionType:      t.PartitionType,
 		Size:               t.Size,
 		LegacyBIOSBootable: t.LegacyBIOSBootable,
-		Offset: t.Offset,
+		Offset:             t.Offset,
 	}, printf)
 	if err != nil {
 		return err
