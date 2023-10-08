@@ -76,7 +76,6 @@ To build & push:
 make installer \
   PUSH=1 \
   IMAGE_NAME="rock5-talos" \
-  ROCK5_BOARD="rock-5b" \
   PLATFORM="linux/arm64"
 ```
 
