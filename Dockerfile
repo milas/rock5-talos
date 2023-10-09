@@ -81,13 +81,15 @@ FROM ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel
 FROM --platform=amd64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-amd64
 FROM --platform=arm64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-arm64
 
-FROM docker.io/milas/rock5-talos-kernel AS rock5-kernel
+FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
 
 FROM scratch AS git-libmali
 ADD https://github.com/JeffyCN/mirrors.git#libmali /
 
 FROM scratch AS libmali-firmware
-COPY --link --from=git-libmali /firmware/g610/mali_csffw.bin /
+
+ADD https://github.com/JeffyCN/mirrors/raw/libmali/firmware/g610/mali_csffw.bin /
+#COPY --link --from=git-libmali /firmware/g610/mali_csffw.bin /
 
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
@@ -617,7 +619,7 @@ COPY --link --from=pkg-util-linux-arm64 /lib/libuuid.* /rootfs/lib/
 COPY --link --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
-COPY --link --from=modules-arm64 /lib/modules /rootfs/lib/modules
+#COPY --link --from=modules-arm64 /lib/modules /rootfs/lib/modules
 COPY --link --from=machined-build-arm64 /machined /rootfs/sbin/init
 COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
 RUN <<END
