@@ -49,6 +49,10 @@ func CopyFiles(printf func(string, ...any), instructions ...CopyInstruction) err
 
 			_, err = io.Copy(to, from)
 
+			if err := to.Sync(); err != nil {
+				return err
+			}
+
 			return err
 		}(instruction); err != nil {
 			return fmt.Errorf("error copying %s -> %s: %w", instruction.F1, instruction.F2, err)
