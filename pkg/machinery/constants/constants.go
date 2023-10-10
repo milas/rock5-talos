@@ -84,6 +84,8 @@ const (
 
 	// BoardRockpi4c is the name of the Radxa Rock pi 4 revision C.
 	BoardRockpi4c = "rockpi_4c"
+	// BoardRock5b is the Radxa Rock 5B.
+	BoardRock5b = "rock_5b"
 
 	// BoardNanoPiR4S is the name of the Friendlyelec Nano Pi R4S.
 	BoardNanoPiR4S = "nanopi_r4s"

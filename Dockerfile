@@ -1,5 +1,14 @@
 # syntax = docker/dockerfile-upstream:1.6.0-labs
 
+FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
+
+FROM --platform=arm64 docker.io/milas/rock5-u-boot:20231010-rock-5b-collabora AS rock5-u-boot-5b
+FROM scratch AS rock5-u-boot
+COPY --link --from=rock5-u-boot-5b /spi/spi_image.img /rock_5b/u-boot.img
+
+FROM scratch AS rock5-firmware
+ADD https://github.com/JeffyCN/mirrors/raw/libmali/firmware/g610/mali_csffw.bin /
+
 # Meta args applied to stage base names.
 
 ARG TOOLS
@@ -468,7 +477,7 @@ COPY --from=talosctl-all /talosctl-linux-${TARGETARCH} /talosctl
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source https://github.com/milas/rock5-talos
 ENTRYPOINT ["/talosctl"]
 
 # The kernel target is the linux kernel.
@@ -609,7 +618,8 @@ COPY --link --from=pkg-util-linux-arm64 /lib/libuuid.* /rootfs/lib/
 COPY --link --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
-COPY --link --from=modules-arm64 /lib/modules /rootfs/lib/modules
+COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
+COPY --link --from=libmali-firmware / /rootfs/lib/firmware/
 COPY --link --from=machined-build-arm64 /machined /rootfs/sbin/init
 RUN <<END
     # the orderly_poweroff call by the kernel will call '/sbin/poweroff'
@@ -680,10 +690,7 @@ COPY --from=squashfs-arm64 /rootfs.sqsh .
 COPY --from=init-build-arm64 /init .
 # copying over firmware binary blobs to initramfs
 COPY --from=pkg-linux-firmware /lib/firmware/rtl_nic ./lib/firmware/rtl_nic
-COPY --from=pkg-linux-firmware /lib/firmware/nvidia/tegra210 ./lib/firmware/nvidia/tegra210
-# the intel ice pkg file from linux-firmware has the version appended to it, but kernel only looks up ice.pkg
-# ref: https://github.com/torvalds/linux/blob/v5.15/Documentation/networking/device_drivers/ethernet/intel/ice.rst#dynamic-device-personalization
-COPY --from=pkg-linux-firmware /lib/firmware/intel/ice/ddp/ice-*.pkg ./lib/firmware/intel/ice/ddp/ice.pkg
+COPY --from=rock5-firmware / ./lib/firmware/
 RUN find . -print0 \
     | xargs -0r touch --no-dereference --date="@${SOURCE_DATE_EPOCH}"
 RUN set -o pipefail \
@@ -723,7 +730,7 @@ COPY --from=initramfs-archive /initramfs.xz /initramfs-${TARGETARCH}.xz
 
 FROM scratch AS talos
 COPY --from=rootfs / /
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source https://github.com/milas/rock5-talos
 ENTRYPOINT ["/sbin/init"]
 
 # The installer target generates an image that can be used to install Talos to
@@ -747,13 +754,17 @@ COPY --from=pkg-sd-boot-amd64 /linuxx64.efi.stub /usr/install/amd64/systemd-stub
 COPY --from=pkg-sd-boot-amd64 /systemd-bootx64.efi /usr/install/amd64/systemd-boot.efi
 
 FROM scratch AS install-artifacts-arm64
-COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
-COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+#COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
+#COPY --from=pkg-kernel-arm64 /dtb /usr/install/arm64/dtb
+COPY --from=rock5-kernel --link /vmlinuz /usr/install/arm64/
+COPY --from=rock5-kernel --link /dtb /usr/install/arm64/dtb
+
 COPY --from=initramfs-archive-arm64 /initramfs.xz /usr/install/arm64/initramfs.xz
 COPY --from=pkg-sd-boot-arm64 /linuxaa64.efi.stub /usr/install/arm64/systemd-stub.efi
 COPY --from=pkg-sd-boot-arm64 /systemd-bootaa64.efi /usr/install/arm64/systemd-boot.efi
-COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
-COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
+#COPY --from=pkg-u-boot-arm64 / /usr/install/arm64/u-boot
+COPY --from=rock5-u-boot / /usr/install/arm64/u-boot
+#COPY --from=pkg-raspberrypi-firmware-arm64 / /usr/install/arm64/raspberrypi-firmware
 
 FROM scratch AS install-artifacts-all
 COPY --from=install-artifacts-amd64 / /
@@ -800,7 +811,7 @@ COPY --from=installer-image / /
 ARG TAG
 ENV VERSION ${TAG}
 LABEL "alpha.talos.dev/version"="${VERSION}"
-LABEL org.opencontainers.image.source https://github.com/siderolabs/talos
+LABEL org.opencontainers.image.source https://github.com/milas/rock5-talos
 ENTRYPOINT ["/bin/installer"]
 
 FROM installer-image-squashed AS installer

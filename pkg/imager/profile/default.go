@@ -14,7 +14,7 @@ const (
 	mib = 1024 * 1024
 
 	// MinRAWDiskSize is the minimum size disk we can create. Used for metal images.
-	MinRAWDiskSize = 1246 * mib
+	MinRAWDiskSize = 4096 * mib
 
 	// DefaultRAWDiskSize is the value we use for any non-metal images by default.
 	DefaultRAWDiskSize = 8192 * mib
@@ -315,6 +315,20 @@ var Default = map[string]Profile{
 		Arch:       "arm64",
 		Platform:   constants.PlatformMetal,
 		Board:      constants.BoardRockpi4c,
+		SecureBoot: pointer.To(false),
+		Output: Output{
+			Kind:      OutKindImage,
+			OutFormat: OutFormatXZ,
+			ImageOptions: &ImageOptions{
+				DiskSize:   MinRAWDiskSize,
+				DiskFormat: DiskFormatRaw,
+			},
+		},
+	},
+	constants.BoardRock5b: {
+		Arch:       "arm64",
+		Platform:   constants.PlatformMetal,
+		Board:      constants.BoardRock5b,
 		SecureBoot: pointer.To(false),
 		Output: Output{
 			Kind:      OutKindImage,

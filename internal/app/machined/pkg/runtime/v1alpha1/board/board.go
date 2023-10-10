@@ -8,6 +8,7 @@ package board
 import (
 	"errors"
 	"fmt"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rock5b"
 	"os"
 
 	"github.com/siderolabs/go-procfs/procfs"
@@ -66,6 +67,8 @@ func newBoard(board string) (b runtime.Board, err error) {
 		b = &rockpi4.Rockpi4{}
 	case constants.BoardRockpi4c:
 		b = &rockpi4c.Rockpi4c{}
+	case constants.BoardRock5b:
+		b = &rock5b.Rock5b{}
 	case constants.BoardJetsonNano:
 		b = &jetsonnano.JetsonNano{}
 	case constants.BoardNanoPiR4S:
