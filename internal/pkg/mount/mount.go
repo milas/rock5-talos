@@ -429,7 +429,11 @@ func (p *Point) Repair() error {
 }
 
 func mount(p *Point) (err error) {
-	return unix.Mount(p.source, p.target, p.fstype, p.flags, p.data)
+	if err := unix.Mount(p.source, p.target, p.fstype, p.flags, p.data); err != nil {
+		return fmt.Errorf("unix.Mount[src=%q target=%q fstype=%q flags=%x data=%q]: %w",
+			p.source, p.target, p.fstype, p.flags, p.data, err)
+	}
+	return nil
 }
 
 func unmount(p *Point) error {

@@ -8,7 +8,7 @@ target kernel {
   target    = "kernel"
   platforms = ["linux/arm64"]
   contexts  = {
-    defconfig    = "./hack/boards/defconfig"
+    defconfig    = "./hack/rock5/defconfig"
   }
 }
 

@@ -206,7 +206,7 @@ help: ## This help menu.
 
 .PHONY: base
 target-%: ## Builds the specified target defined in the Dockerfile. The build result will only remain in the build cache.
-	@$(BUILD) \
+	$(BUILD) \
 		--target=$* \
 		$(COMMON_ARGS) \
 		$(TARGET_ARGS) \

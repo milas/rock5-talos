@@ -13,7 +13,7 @@ const (
 	mib = 1024 * 1024
 
 	// MinRAWDiskSize is the minimum size disk we can create. Used for metal images.
-	MinRAWDiskSize = 4192 * mib
+	MinRAWDiskSize = 8192 * mib
 
 	// DefaultRAWDiskSize is the value we use for any non-metal images by default.
 	DefaultRAWDiskSize = 8192 * mib
@@ -45,7 +45,7 @@ var Default = map[string]Profile{
 			Kind:      OutKindImage,
 			OutFormat: OutFormatXZ,
 			ImageOptions: &ImageOptions{
-				DiskSize:   MinRAWDiskSize,
+				DiskSize: MinRAWDiskSize,
 				DiskFormat: DiskFormatRaw,
 			},
 		},

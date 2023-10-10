@@ -7,8 +7,6 @@ package mount
 import (
 	"fmt"
 	"github.com/freddierice/go-losetup/v2"
-	"golang.org/x/sys/unix"
-
 	"github.com/siderolabs/talos/pkg/machinery/constants"
 )
 
@@ -22,7 +20,8 @@ func SquashfsMountPoints(prefix string) (mountpoints *Points, err error) {
 	}
 
 	squashfs := NewMountPoints()
-	squashfs.Set("squashfs", NewMountPoint(dev.Path(), "/", "squashfs", unix.MS_RDONLY|unix.MS_I_VERSION, "", WithPrefix(prefix), WithFlags(ReadOnly|Shared)))
+	// flags make rock5b unhappy?
+	squashfs.Set("squashfs", NewMountPoint(dev.Path(), "/", "squashfs", 0x0, "", WithPrefix(prefix), WithFlags(ReadOnly|Shared)))
 
 	return squashfs, nil
 }

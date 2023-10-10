@@ -124,9 +124,6 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 		BootTarget(opts.Disk, &Target{
 			PreserveContents: bootLoaderPresent,
 		}),
-	}
-
-	targets = append(targets,
 		MetaTarget(opts.Disk, &Target{
 			PreserveContents: bootLoaderPresent,
 		}),
@@ -137,7 +134,7 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 			},
 		}),
 		EphemeralTarget(opts.Disk, NoFilesystem),
-	)
+	}
 
 	if !opts.Force {
 		for _, target := range targets {
