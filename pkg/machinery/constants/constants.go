@@ -84,6 +84,8 @@ const (
 
 	// BoardRockpi4c is the name of the Radxa Rock pi 4 revision C.
 	BoardRockpi4c = "rockpi_4c"
+	// BoardRock5A is the Radxa Rock 5A.
+	BoardRock5a = "rock_5a"
 	// BoardRock5b is the Radxa Rock 5B.
 	BoardRock5b = "rock_5b"
 

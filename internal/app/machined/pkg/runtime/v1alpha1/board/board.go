@@ -8,7 +8,7 @@ package board
 import (
 	"errors"
 	"fmt"
-	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rock5b"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rock5a"
 	"os"
 
 	"github.com/siderolabs/go-procfs/procfs"
@@ -19,6 +19,7 @@ import (
 	libretechallh3cch5 "github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/libretech_all_h3_cc_h5"
 	nanopir4s "github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/nanopi_r4s"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/pine64"
+	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rock5b"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rock64"
 	rockpi4 "github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rockpi4"
 	rockpi4c "github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board/rockpi4c"
@@ -67,6 +68,8 @@ func newBoard(board string) (b runtime.Board, err error) {
 		b = &rockpi4.Rockpi4{}
 	case constants.BoardRockpi4c:
 		b = &rockpi4c.Rockpi4c{}
+	case constants.BoardRock5a:
+		b = &rock5a.Rock5a{}
 	case constants.BoardRock5b:
 		b = &rock5b.Rock5b{}
 	case constants.BoardJetsonNano:

@@ -1,5 +1,14 @@
 # syntax = docker/dockerfile-upstream:1.6.0-labs
 
+# Meta args applied to stage base names.
+
+ARG TOOLS
+ARG PKGS
+ARG EXTRAS
+ARG INSTALLER_ARCH
+
+##################
+
 FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
 
 FROM --platform=arm64 docker.io/milas/rock5-u-boot:20231010-rock-5b-collabora AS rock5-u-boot-5b
@@ -9,12 +18,7 @@ COPY --link --from=rock5-u-boot-5b /spi/spi_image.img /rock_5b/u-boot.img
 FROM scratch AS rock5-firmware
 ADD https://github.com/JeffyCN/mirrors/raw/libmali/firmware/g610/mali_csffw.bin /
 
-# Meta args applied to stage base names.
-
-ARG TOOLS
-ARG PKGS
-ARG EXTRAS
-ARG INSTALLER_ARCH
+##################
 
 # Resolve package images using ${PKGS} to be used later in COPY --from=.
 
@@ -619,7 +623,6 @@ COPY --link --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
 COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
-COPY --link --from=libmali-firmware / /rootfs/lib/firmware/
 COPY --link --from=machined-build-arm64 /machined /rootfs/sbin/init
 RUN <<END
     # the orderly_poweroff call by the kernel will call '/sbin/poweroff'

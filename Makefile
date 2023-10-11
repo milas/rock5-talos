@@ -1,5 +1,6 @@
-REGISTRY ?= ghcr.io
-USERNAME ?= siderolabs
+REGISTRY ?= docker.io
+USERNAME ?= milas
+IMAGE_PREFIX ?= rock5-talos-
 SHA ?= $(shell git describe --match=none --always --abbrev=8 --dirty)
 TAG ?= $(shell git describe --tag --always --dirty --match v[0-9]\*)
 ABBREV_TAG ?= $(shell git describe --tag --always --match v[0-9]\* --abbrev=0 )
@@ -170,7 +171,7 @@ If you already have a compatible builder instance, you may use that instead.
 ## Artifacts
 
 All artifacts will be output to ./$(ARTIFACTS). Images will be tagged with the
-registry "$(IMAGE_REGISTRY)", username "$(USERNAME)", and a dynamic tag (e.g. $(REGISTRY_AND_USERNAME)/image:$(IMAGE_TAG)).
+registry "$(IMAGE_REGISTRY)", username "$(USERNAME)", and a dynamic tag (e.g. $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)image:$(IMAGE_TAG)).
 The registry and username can be overridden by exporting REGISTRY, and USERNAME
 respectively.
 
@@ -205,10 +206,10 @@ local-%: ## Builds the specified target defined in the Dockerfile using the loca
 
 docker-%: ## Builds the specified target defined in the Dockerfile using the docker output type. The build result will be output to the specified local destination.
 	@mkdir -p $(DEST)
-	@$(MAKE) target-$* TARGET_ARGS="--output type=docker,dest=$(DEST)/$*.tar,name=$(REGISTRY_AND_USERNAME)/$*:$(IMAGE_TAG) $(TARGET_ARGS)"
+	@$(MAKE) target-$* TARGET_ARGS="--output type=docker,dest=$(DEST)/$*.tar,name=$(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)$*:$(IMAGE_TAG) $(TARGET_ARGS)"
 
 registry-%: ## Builds the specified target defined in the Dockerfile using the image/registry output type. The build result will be pushed to the registry if PUSH=true.
-	@$(MAKE) target-$* TARGET_ARGS="--output type=image,name=$(REGISTRY_AND_USERNAME)/$*:$(IMAGE_TAG) $(TARGET_ARGS)"
+	@$(MAKE) target-$* TARGET_ARGS="--output type=image,name=$(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)$*:$(IMAGE_TAG) $(TARGET_ARGS)"
 
 hack-test-%: ## Runs the specified script in ./hack/test with well known environment variables.
 	@./hack/test/$*.sh
@@ -297,10 +298,10 @@ talosctl:
 	@$(MAKE) local-talosctl-targetarch DEST=$(ARTIFACTS)
 
 image-%: ## Builds the specified image. Valid options are aws, azure, digital-ocean, gcp, and vmware (e.g. image-aws)
-	@docker pull $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG)
+	@docker pull $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG)
 	@for platform in $(subst $(,),$(space),$(PLATFORM)); do \
 		arch=$$(basename "$${platform}") && \
-		docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/secureboot:ro -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG) $* --arch $$arch $(IMAGER_ARGS) ; \
+		docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/secureboot:ro -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG) $* --arch $$arch $(IMAGER_ARGS) ; \
 	done
 
 images-essential: image-aws image-gcp image-metal secureboot-installer ## Builds only essential images used in the CI (AWS, GCP, and Metal).
@@ -308,8 +309,8 @@ images-essential: image-aws image-gcp image-metal secureboot-installer ## Builds
 images: image-aws image-azure image-digital-ocean image-exoscale image-gcp image-hcloud image-iso image-metal image-nocloud image-openstack image-oracle image-scaleway image-upcloud image-vmware image-vultr ## Builds all known images (AWS, Azure, DigitalOcean, Exoscale, GCP, HCloud, Metal, NoCloud, Openstack, Oracle, Scaleway, UpCloud, Vultr and VMware).
 
 sbc-%: ## Builds the specified SBC image. Valid options are rpi_generic, rock64, bananapi_m64, libretech_all_h3_cc_h5, rockpi_4, rockpi_4c, pine64, jetson_nano and nanopi_r4s (e.g. sbc-rpi_generic)
-	@docker pull $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG)
-	@docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/imager:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
+	@docker pull $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG)
+	@docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
 
 sbcs: sbc-rpi_generic sbc-rock64 sbc-bananapi_m64 sbc-libretech_all_h3_cc_h5 sbc-rockpi_4 sbc-rockpi_4c sbc-pine64 sbc-jetson_nano sbc-nanopi_r4s ## Builds all known SBC images (Raspberry Pi 4, Rock64, Banana Pi M64, Radxa ROCK Pi 4, Radxa ROCK Pi 4c, Pine64, Libre Computer Board ALL-H3-CC, Jetson Nano and Nano Pi R4S).
 
@@ -321,10 +322,10 @@ secureboot-iso: image-secureboot-iso ## Builds UEFI only ISO which uses UKI and 
 
 .PHONY: secureboot-installer
 secureboot-installer: ## Builds UEFI only installer which uses UKI and push it to the registry.
-	@$(MAKE) image-secureboot-installer IMAGER_ARGS="--base-installer-image $(REGISTRY_AND_USERNAME)/installer:$(IMAGE_TAG)"
+	@$(MAKE) image-secureboot-installer IMAGER_ARGS="--base-installer-image $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)installer:$(IMAGE_TAG)"
 	@for platform in $(subst $(,),$(space),$(PLATFORM)); do \
 		arch=$$(basename "$${platform}") && \
-		crane push $(ARTIFACTS)/metal-$${arch}-secureboot-installer.tar $(REGISTRY_AND_USERNAME)/installer:$(IMAGE_TAG)-$${arch}-secureboot ; \
+		crane push $(ARTIFACTS)/metal-$${arch}-secureboot-installer.tar $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)installer:$(IMAGE_TAG)-$${arch}-secureboot ; \
 	done
 
 .PHONY: talosctl-cni-bundle
@@ -430,8 +431,8 @@ e2e-%: $(ARTIFACTS)/$(INTEGRATION_TEST_DEFAULT_TARGET)-amd64 external-artifacts 
 		TAG=$(TAG) \
 		SHA=$(SHA) \
 		REGISTRY=$(IMAGE_REGISTRY) \
-		IMAGE=$(REGISTRY_AND_USERNAME)/talos:$(IMAGE_TAG) \
-		INSTALLER_IMAGE=$(REGISTRY_AND_USERNAME)/installer:$(IMAGE_TAG) \
+		IMAGE=$(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)talos:$(IMAGE_TAG) \
+		INSTALLER_IMAGE=$(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)installer:$(IMAGE_TAG) \
 		ARTIFACTS=$(ARTIFACTS) \
 		TALOSCTL=$(PWD)/$(ARTIFACTS)/$(TALOSCTL_DEFAULT_TARGET)-amd64 \
 		INTEGRATION_TEST=$(PWD)/$(ARTIFACTS)/$(INTEGRATION_TEST_DEFAULT_TARGET)-amd64 \
@@ -518,7 +519,7 @@ clean: ## Cleans up all artifacts.
 
 .PHONY: image-list
 image-list: ## Prints a list of all images built by this Makefile with digests.
-	@echo -n installer talos imager talosctl | xargs -d ' ' -I{} sh -c 'echo $(REGISTRY_AND_USERNAME)/{}:$(IMAGE_TAG)' | xargs -I{} sh -c 'echo {}@$$(crane digest {})'
+	@echo -n installer talos imager talosctl | xargs -d ' ' -I{} sh -c 'echo $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX){}:$(IMAGE_TAG)' | xargs -I{} sh -c 'echo {}@$$(crane digest {})'
 
 .PHONY: sign-images
 sign-images: ## Run cosign to sign all images built by this Makefile.

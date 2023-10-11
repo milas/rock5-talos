@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// Package rock5b provides the Radxa rock pi implementation.
-package rock5b
+// Package rock5a provides the Radxa rock pi implementation.
+package rock5a
 
 import (
 	"log"
@@ -20,24 +20,24 @@ import (
 
 const (
 	sectorSize             = 512
-	ubootImage             = "/usr/install/arm64/u-boot/rock_5b/u-boot.img"
+	ubootImage             = "/usr/install/arm64/u-boot/rock_5a/u-boot.img"
 	ubootOffset     int64  = sectorSize * 0x40
 	partitionOffset uint64 = 0x8000
-	dtb                    = "/dtb/rockchip/rk3588-rock-5b.dtb"
+	dtb                    = "/dtb/rockchip/rk3588s-rock-5a.dtb"
 )
 
-// Rock5b represents the Radxa Rock 5B board.
+// Rock5a represents the Radxa Rock 5A board.
 //
 // Reference: https://radxa.com
-type Rock5b struct{}
+type Rock5a struct{}
 
 // Name implements the runtime.Board.
-func (r *Rock5b) Name() string {
-	return constants.BoardRock5b
+func (r *Rock5a) Name() string {
+	return constants.BoardRock5a
 }
 
 // Install implements the runtime.Board.
-func (r *Rock5b) Install(disk string) (err error) {
+func (r *Rock5a) Install(disk string) (err error) {
 	var f *os.File
 
 	if f, err = os.OpenFile(disk, os.O_RDWR|unix.O_CLOEXEC, 0o666); err != nil {
@@ -83,7 +83,7 @@ func (r *Rock5b) Install(disk string) (err error) {
 }
 
 // KernelArgs implements the runtime.Board.
-func (r *Rock5b) KernelArgs() procfs.Parameters {
+func (r *Rock5a) KernelArgs() procfs.Parameters {
 	return []*procfs.Parameter{
 		procfs.NewParameter("earlycon").Append("uart8250,mmio32,0xfeb50000"),
 		procfs.NewParameter("console").Append("ttyFIQ0").Append("tty1"),
@@ -100,6 +100,6 @@ func (r *Rock5b) KernelArgs() procfs.Parameters {
 }
 
 // PartitionOptions implements the runtime.Board.
-func (r *Rock5b) PartitionOptions() *runtime.PartitionOptions {
+func (r *Rock5a) PartitionOptions() *runtime.PartitionOptions {
 	return &runtime.PartitionOptions{PartitionsOffset: partitionOffset}
 }
