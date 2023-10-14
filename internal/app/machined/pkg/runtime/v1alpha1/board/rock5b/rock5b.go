@@ -91,6 +91,8 @@ func (r *Rock5b) KernelArgs() procfs.Parameters {
 		procfs.NewParameter("cgroup_enable").Append("cpuset").Append("memory"),
 		procfs.NewParameter("cgroup_memory").Append("1"),
 		procfs.NewParameter("swapaccount").Append("1"),
+		procfs.NewParameter("unified_cgroup_hierarchy").Append("0"),
+		procfs.NewParameter(constants.KernelParamCGroups).Append("0"),
 	}
 }
 
