@@ -16,19 +16,21 @@ const (
 )
 
 // DefaultArgs returns the Talos default kernel commandline options.
+//
+// HACK(rock5): disable some arguments while trying to root cause some failures
 var DefaultArgs = []string{
-	"init_on_alloc=1",
+	// "init_on_alloc=1",
 	"slab_nomerge=",
 	"pti=on",
 	"consoleblank=0",
 	// AWS recommends setting the nvme_core.io_timeout to the highest value possible.
 	// See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nvme-ebs-volumes.html.
-	"nvme_core.io_timeout=4294967295",
+	// "nvme_core.io_timeout=4294967295",
 	// Disable rate limited printk
 	"printk.devkmsg=on",
-	"ima_template=ima-ng",
-	"ima_appraise=fix",
-	"ima_hash=sha512",
+	// "ima_template=ima-ng",
+	//"ima_appraise=fix",
+	//"ima_hash=sha512",
 }
 
 // SecureBootArgs returns the kernel commandline options required for secure boot.

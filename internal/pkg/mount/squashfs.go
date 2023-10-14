@@ -21,7 +21,7 @@ func SquashfsMountPoints(prefix string) (mountpoints *Points, err error) {
 
 	squashfs := NewMountPoints()
 	// flags make rock5b unhappy?
-	squashfs.Set("squashfs", NewMountPoint(dev.Path(), "/", "squashfs", 0x0, "", WithPrefix(prefix), WithFlags(ReadOnly|Shared)))
+	squashfs.Set("squashfs", NewMountPoint(dev.Path(), "/", "squashfs", 0x0, "", WithPrefix(prefix), WithFlags(Shared)))
 
 	return squashfs, nil
 }

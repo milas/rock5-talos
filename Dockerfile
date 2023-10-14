@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile-upstream:1.5.2-labs
+# syntax = docker/dockerfile-upstream:1-labs
 
 # Meta args applied to stage base names.
 
@@ -6,6 +6,19 @@ ARG TOOLS
 ARG PKGS
 ARG EXTRAS
 ARG INSTALLER_ARCH
+
+####
+
+FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
+FROM --platform=linux/arm64 milas/rock5-u-boot:latest-rock-5a-radxa AS rock-5a-u-boot
+FROM --platform=linux/arm64 milas/rock5-u-boot:latest-rock-5b-radxa AS rock-5b-u-boot
+
+FROM scratch AS libmali-firmware
+ADD https://github.com/JeffyCN/mirrors/raw/libmali/firmware/g610/mali_csffw.bin /
+
+
+#####
+
 
 # Resolve package images using ${PKGS} to be used later in COPY --from=.
 
@@ -80,16 +93,6 @@ FROM --platform=arm64 ghcr.io/siderolabs/kmod:${PKGS} AS pkg-kmod-arm64
 FROM ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel
 FROM --platform=amd64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-amd64
 FROM --platform=arm64 ghcr.io/siderolabs/kernel:${PKGS} AS pkg-kernel-arm64
-
-FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
-
-FROM scratch AS git-libmali
-ADD https://github.com/JeffyCN/mirrors.git#libmali /
-
-FROM scratch AS libmali-firmware
-
-ADD https://github.com/JeffyCN/mirrors/raw/libmali/firmware/g610/mali_csffw.bin /
-#COPY --link --from=git-libmali /firmware/g610/mali_csffw.bin /
 
 FROM --platform=arm64 ghcr.io/siderolabs/u-boot:${PKGS} AS pkg-u-boot-arm64
 FROM --platform=arm64 ghcr.io/siderolabs/raspberrypi-firmware:${PKGS} AS pkg-raspberrypi-firmware-arm64
@@ -619,7 +622,7 @@ COPY --link --from=pkg-util-linux-arm64 /lib/libuuid.* /rootfs/lib/
 COPY --link --from=pkg-util-linux-arm64 /lib/libmount.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/lib/libkmod.* /rootfs/lib/
 COPY --link --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
-COPY --link --from=modules-arm64 /lib/modules /rootfs/lib/modules
+#COPY --link --from=modules-arm64 /lib/modules /rootfs/lib/modules
 COPY --link --from=machined-build-arm64 /machined /rootfs/sbin/init
 COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
 RUN <<END
@@ -755,9 +758,6 @@ FROM scratch AS install-artifacts-amd64
 COPY --from=pkg-kernel-amd64 /boot/vmlinuz /usr/install/amd64/vmlinuz
 COPY --from=pkg-kernel-amd64 /dtb /usr/install/amd64/dtb
 COPY --from=initramfs-archive-amd64 /initramfs.xz /usr/install/amd64/initramfs.xz
-
-FROM milas/rock5-u-boot:latest-rock-5a-radxa AS rock-5a-u-boot
-FROM milas/rock5-u-boot:latest-rock-5b-radxa AS rock-5b-u-boot
 
 FROM scratch AS install-artifacts-arm64
 #COPY --from=pkg-kernel-arm64 /boot/vmlinuz /usr/install/arm64/vmlinuz
