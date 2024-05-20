@@ -11,7 +11,8 @@ ARG INSTALLER_ARCH
 
 FROM --platform=arm64 docker.io/milas/rock5-talos-kernel AS rock5-kernel
 
-FROM --platform=arm64 docker.io/milas/rock5-u-boot:20231010-rock-5b-collabora AS rock5-u-boot-5b
+#FROM --platform=arm64 docker.io/milas/rock5-u-boot:20231010-rock-5b-collabora AS rock5-u-boot-5b
+FROM --platform=arm64 docker.io/milas/rock5-edk2:v0.9.1-rock-5b AS rock5-u-boot-5b
 FROM scratch AS rock5-u-boot
 COPY --link --from=rock5-u-boot-5b /spi/spi_image.img /rock_5b/u-boot.img
 

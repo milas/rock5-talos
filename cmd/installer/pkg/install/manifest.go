@@ -117,11 +117,16 @@ func NewManifest(mode Mode, uefiOnlyBoot bool, bootLoaderPresent bool, opts *Opt
 
 	targets := []*Target{}
 
+	targets = append(targets,
+		UBootTarget(opts.Disk, &Target{
+			PreserveContents: bootLoaderPresent,
+		}))
+
 	// create GRUB BIOS+UEFI partitions, or only one big EFI partition if not using GRUB
 	if !uefiOnlyBoot {
 		targets = append(targets,
 			EFITarget(opts.Disk, nil),
-			BIOSTarget(opts.Disk, nil),
+			//BIOSTarget(opts.Disk, nil),
 			BootTarget(opts.Disk, &Target{
 				PreserveContents: bootLoaderPresent,
 			}),

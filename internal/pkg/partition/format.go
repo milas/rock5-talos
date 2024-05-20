@@ -61,6 +61,12 @@ func zeroPartition(devname string, printf func(string, ...any)) (err error) {
 
 func systemPartitionsFormatOptions(label string) *FormatOptions {
 	switch label {
+	case constants.UBootPartitionLabel:
+		return &FormatOptions{
+			Label:          constants.UBootPartitionLabel,
+			FileSystemType: FilesystemTypeNone,
+			Force:          true,
+		}
 	case constants.EFIPartitionLabel:
 		return &FormatOptions{
 			Label:          constants.EFIPartitionLabel,

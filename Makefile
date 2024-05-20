@@ -71,7 +71,7 @@ TESTPKGS ?= github.com/siderolabs/talos/...
 RELEASES ?= v1.3.7 v1.4.5
 SHORT_INTEGRATION_TEST ?=
 CUSTOM_CNI_URL ?=
-INSTALLER_ARCH ?= all
+INSTALLER_ARCH ?= arm64
 IMAGER_ARGS ?=
 
 CGO_ENABLED ?= 0
@@ -309,8 +309,8 @@ images-essential: image-aws image-gcp image-metal secureboot-installer ## Builds
 images: image-aws image-azure image-digital-ocean image-exoscale image-gcp image-hcloud image-iso image-metal image-nocloud image-openstack image-oracle image-scaleway image-upcloud image-vmware image-vultr ## Builds all known images (AWS, Azure, DigitalOcean, Exoscale, GCP, HCloud, Metal, NoCloud, Openstack, Oracle, Scaleway, UpCloud, Vultr and VMware).
 
 sbc-%: ## Builds the specified SBC image. Valid options are rpi_generic, rock64, bananapi_m64, libretech_all_h3_cc_h5, rockpi_4, rockpi_4c, pine64, jetson_nano and nanopi_r4s (e.g. sbc-rpi_generic)
-	@docker pull $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG)
-	@docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
+	# @docker pull $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG)
+	docker run --rm -t -v /dev:/dev -v $(PWD)/$(ARTIFACTS):/out --network=host --privileged $(REGISTRY_AND_USERNAME)/$(IMAGE_PREFIX)imager:$(IMAGE_TAG) $* --arch arm64 $(IMAGER_ARGS)
 
 sbcs: sbc-rpi_generic sbc-rock64 sbc-bananapi_m64 sbc-libretech_all_h3_cc_h5 sbc-rockpi_4 sbc-rockpi_4c sbc-pine64 sbc-jetson_nano sbc-nanopi_r4s ## Builds all known SBC images (Raspberry Pi 4, Rock64, Banana Pi M64, Radxa ROCK Pi 4, Radxa ROCK Pi 4c, Pine64, Libre Computer Board ALL-H3-CC, Jetson Nano and Nano Pi R4S).
 

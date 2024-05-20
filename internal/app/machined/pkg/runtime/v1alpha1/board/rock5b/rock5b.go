@@ -72,7 +72,7 @@ func (r *Rock5b) Install(disk string) (err error) {
 	}
 
 	src := "/usr/install/arm64" + dtb
-	dst := "/boot/EFI" + dtb
+	dst := "/boot/EFI/dtb/base/" + filepath.Base(dtb)
 
 	err = os.MkdirAll(filepath.Dir(dst), 0o600)
 	if err != nil {
@@ -101,5 +101,6 @@ func (r *Rock5b) KernelArgs() procfs.Parameters {
 
 // PartitionOptions implements the runtime.Board.
 func (r *Rock5b) PartitionOptions() *runtime.PartitionOptions {
-	return &runtime.PartitionOptions{PartitionsOffset: partitionOffset}
+	//return &runtime.PartitionOptions{PartitionsOffset: partitionOffset}
+	return nil
 }

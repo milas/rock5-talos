@@ -69,6 +69,8 @@ var NoFilesystem = &Target{
 // ParseTarget parses the target from the label and creates a required target.
 func ParseTarget(label, deviceName string) (*Target, error) {
 	switch label {
+	case constants.UBootPartitionLabel:
+		return UBootTarget(deviceName, nil), nil
 	case constants.EFIPartitionLabel:
 		return EFITarget(deviceName, nil), nil
 	case constants.BIOSGrubPartitionLabel:
@@ -84,6 +86,15 @@ func ParseTarget(label, deviceName string) (*Target, error) {
 	default:
 		return nil, fmt.Errorf("label %q is not supported", label)
 	}
+}
+
+func UBootTarget(device string, extra *Target) *Target {
+	target := &Target{
+		FormatOptions: partition.NewFormatOptions(constants.UBootPartitionLabel),
+		Options:       partition.NewPartitionOptions(constants.UBootPartitionLabel, false),
+		Device:        device,
+	}
+	return target.enhance(extra)
 }
 
 // EFITarget builds the default EFI target.
@@ -220,6 +231,7 @@ func (t *Target) partition(pt *gpt.GPT, pos int, printf func(string, ...any)) (e
 		PartitionType:      t.PartitionType,
 		Size:               t.Size,
 		LegacyBIOSBootable: t.LegacyBIOSBootable,
+		Offset: t.Offset,
 	}, printf)
 	if err != nil {
 		return err

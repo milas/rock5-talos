@@ -131,6 +131,9 @@ const (
 	// ExtensionsRuntimeConfigFile extensions layers configuration file name in the rootfs.
 	ExtensionsRuntimeConfigFile = "/etc/extensions.yaml"
 
+	// UBootPartitionLabel is the label of the partition to use for the reserved UEFI partition.
+	UBootPartitionLabel = "uboot"
+
 	// EFIPartitionLabel is the label of the partition to use for mounting at
 	// the boot path.
 	EFIPartitionLabel = "EFI"

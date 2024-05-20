@@ -17,6 +17,7 @@ type Options struct {
 	PartitionLabel     string
 	PartitionType      Type
 	Size               uint64
+	Offset             uint64
 	LegacyBIOSBootable bool
 }
 
@@ -50,6 +51,10 @@ func Partition(pt *gpt.GPT, pos int, device string, partitionOpts Options, print
 		opts = append(opts, gpt.WithMaximumSize(true))
 	}
 
+	if partitionOpts.Offset != 0 {
+		opts = append(opts, gpt.WithOffset(partitionOpts.Offset))
+	}
+
 	if partitionOpts.LegacyBIOSBootable {
 		opts = append(opts, gpt.WithLegacyBIOSBootableAttribute(true))
 	}
@@ -71,10 +76,19 @@ func Partition(pt *gpt.GPT, pos int, device string, partitionOpts Options, print
 
 func systemPartitionsPartitonOptions(label string, uki bool) *Options {
 	switch label {
+	case constants.UBootPartitionLabel:
+		// HACK(rock5): need a special 8MiB reserved partition at LBA 2048
+		return &Options{
+			PartitionType: LinuxFilesystemData,
+			Offset:        2048 * 512,
+			Size:          8 * MiB,
+		}
 	case constants.EFIPartitionLabel:
 		partitionOptions := &Options{
 			PartitionType: EFISystemPartition,
 			Size:          EFISize,
+			// HACK(rock5): EFI partition is first and needs to be past the bootloader
+			Offset: 0x8000 * 512,
 		}
 
 		if uki {

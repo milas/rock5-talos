@@ -6,6 +6,7 @@ package imager
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/siderolabs/talos/pkg/reporter"
 )
@@ -20,9 +21,10 @@ func progressPrintf(report *reporter.Reporter, status reporter.Update) func(form
 			msg += "\n\t" + extra
 		}
 
-		report.Report(reporter.Update{
-			Message: msg,
-			Status:  status.Status,
-		})
+		_, _ = os.Stderr.WriteString(msg + "\n")
+		// report.Report(reporter.Update{
+		//	Message: msg,
+		//	Status:  status.Status,
+		//})
 	}
 }
