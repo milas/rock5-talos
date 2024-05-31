@@ -1,8 +1,12 @@
 <!-- markdownlint-disable MD041 -->
 
+> [!CAUTION]  
+> This repository is no longer maintained.
+> Use [milas/talos-sbc-rk3588](https://github.com/milas/talos-sbc-rk3588) instead.
+
 ---
 
-<h1 align="center">🍴 Fork of <a href="https://github.com/siderolabs/talos/">siderolabs/talos</a> to support Radxa Rock 5 🍴</h1>
+<h3 align="center">🍴 Fork of <a href="https://github.com/siderolabs/talos/">siderolabs/talos</a> to support Radxa Rock 5 🍴</h3>
 
 ---
 
