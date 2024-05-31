@@ -547,7 +547,6 @@ COPY --from=pkg-kmod-arm64 /usr/bin/kmod /rootfs/sbin/modprobe
 COPY --from=pkg-kernel-arm64 /lib/modules /rootfs/lib/modules
 COPY --from=machined-build-arm64 /machined /rootfs/sbin/init
 COPY --link --from=rock5-kernel /lib/modules /rootfs/lib/modules
-COPY --link --from=libmali-firmware / /rootfs/lib/firmware/
 # the orderly_poweroff call by the kernel will call '/sbin/poweroff'
 RUN ln /rootfs/sbin/init /rootfs/sbin/poweroff
 RUN chmod +x /rootfs/sbin/poweroff
@@ -606,10 +605,11 @@ COPY --from=squashfs-arm64 /rootfs.sqsh .
 COPY --from=init-build-arm64 /init .
 # copying over firmware binary blobs to initramfs
 COPY --from=pkg-linux-firmware /lib/firmware/rtl_nic ./lib/firmware/rtl_nic
-COPY --from=pkg-linux-firmware /lib/firmware/nvidia/tegra210 ./lib/firmware/nvidia/tegra210
+#COPY --from=pkg-linux-firmware /lib/firmware/nvidia/tegra210 ./lib/firmware/nvidia/tegra210
 # the intel ice pkg file from linux-firmware has the version appended to it, but kernel only looks up ice.pkg
 # ref: https://github.com/torvalds/linux/blob/v5.15/Documentation/networking/device_drivers/ethernet/intel/ice.rst#dynamic-device-personalization
-COPY --from=pkg-linux-firmware /lib/firmware/intel/ice/ddp/ice-*.pkg ./lib/firmware/intel/ice/ddp/ice.pkg
+#COPY --from=pkg-linux-firmware /lib/firmware/intel/ice/ddp/ice-*.pkg ./lib/firmware/intel/ice/ddp/ice.pkg
+COPY --link --from=libmali-firmware --chmod=0644 / ./lib/firmware/
 RUN find . -print0 \
     | xargs -0r touch --no-dereference --date="@${SOURCE_DATE_EPOCH}"
 RUN set -o pipefail \
